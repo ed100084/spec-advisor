@@ -30,13 +30,14 @@ export default function BidNoticePage() {
 
   const handleUpload = async (e) => {
     e.preventDefault()
-    const fd = new FormData(e.target)
+    const formEl = e.currentTarget
+    const fd = new FormData(formEl)
     try {
       await uploadBidTemplate(fd)
       const { data } = await getBidTemplates()
       setTemplates(data)
       setShowUpload(false)
-      e.target.reset()
+      formEl.reset()
     } catch (err) {
       alert(`上傳失敗: ${err.response?.data?.detail || err.message}`)
     }

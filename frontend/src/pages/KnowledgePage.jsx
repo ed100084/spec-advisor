@@ -40,12 +40,13 @@ export default function KnowledgePage() {
 
   const handleUpload = async (e) => {
     e.preventDefault()
-    const fd = new FormData(e.target)
+    const formEl = e.currentTarget
+    const fd = new FormData(formEl)
     setUploading(true)
     try {
       await uploadKnowledge(fd)
       setShowUpload(false)
-      e.target.reset()
+      formEl.reset()
       await load()
     } catch (err) {
       alert(`上傳失敗: ${err.response?.data?.detail || err.message}`)

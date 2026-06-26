@@ -30,12 +30,13 @@ export default function ControlsPage() {
 
   const handleUpload = async (e) => {
     e.preventDefault()
+    const formEl = e.currentTarget
     setUploading(true)
     try {
-      const form = new FormData(e.currentTarget)
+      const form = new FormData(formEl)
       const { data } = await importControlBaseline(form)
       alert(`匯入完成，共 ${data.imported_count} 項控制措施`)
-      e.currentTarget.reset()
+      formEl.reset()
       await loadVersions()
       setSelectedVersion(data.version_id)
     } catch (err) {
