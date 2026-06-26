@@ -1,5 +1,5 @@
 import { Routes, Route, NavLink } from 'react-router-dom'
-import { FileText, Search, GitCompare, Users, BookTemplate, BookOpen, FileCheck } from 'lucide-react'
+import { FileText, Search, GitCompare, Users, BookTemplate, BookOpen, FileCheck, Database } from 'lucide-react'
 import DocumentsPage from './pages/DocumentsPage'
 import AnalysisPage from './pages/AnalysisPage'
 import ComparePage from './pages/ComparePage'
@@ -7,6 +7,7 @@ import ReviewsPage from './pages/ReviewsPage'
 import TemplatesPage from './pages/TemplatesPage'
 import KnowledgePage from './pages/KnowledgePage'
 import BidNoticePage from './pages/BidNoticePage'
+import ControlsPage from './pages/ControlsPage'
 
 const navItems = [
   { to: '/', icon: FileText, label: '文件管理' },
@@ -16,6 +17,7 @@ const navItems = [
   { to: '/reviews', icon: Users, label: '協作審閱' },
   { to: '/templates', icon: BookTemplate, label: '範本產生' },
   { to: '/knowledge', icon: BookOpen, label: '知識庫' },
+  { to: '/controls', icon: Database, label: '控制措施' },
 ]
 
 export default function App() {
@@ -59,6 +61,7 @@ export default function App() {
           <Route path="/templates" element={<TemplatesPage />} />
           <Route path="/bid" element={<BidNoticePage />} />
           <Route path="/knowledge" element={<KnowledgePage />} />
+          <Route path="/controls" element={<ControlsPage />} />
         </Routes>
       </main>
     </div>

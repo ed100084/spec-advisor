@@ -8,6 +8,7 @@ export const uploadDocument = (file, department = '', project = '', securityMeta
   form.append('file', file)
   form.append('department', department)
   form.append('project', project)
+  form.append('is_information_system', securityMeta.isInformationSystem || false)
   form.append('security_responsibility_level', securityMeta.securityResponsibilityLevel || 'A')
   form.append('confidentiality_level', securityMeta.confidentialityLevel || '普')
   form.append('integrity_level', securityMeta.integrityLevel || '普')
@@ -63,6 +64,13 @@ export const createKnowledge = (data) => api.post('/knowledge', data)
 export const uploadKnowledge = (form) => api.post('/knowledge/upload', form)
 export const updateKnowledge = (id, data) => api.patch(`/knowledge/${id}`, data)
 export const deleteKnowledge = (id) => api.delete(`/knowledge/${id}`)
+
+// Control Measures
+export const importControlBaseline = (form) => api.post('/controls/import', form)
+export const getControlVersions = () => api.get('/controls/versions')
+export const getControlMeasures = (params) => api.get('/controls/measures', { params })
+export const updateControlMeasure = (id, data) => api.patch(`/controls/measures/${id}`, data)
+export const deleteControlVersion = (id) => api.delete(`/controls/versions/${id}`)
 
 // Templates
 export const generateTemplate = (category, description) =>

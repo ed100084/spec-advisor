@@ -46,6 +46,44 @@ def format_security_profile(document_meta: dict | None = None) -> str:
 控制措施套用原則：若防護需求等級為「高」，應檢視「高」之控制措施，且高等級要求含「中」之所有控制措施；「中」又含「普」之所有控制措施。若為「中」，應檢視「中」及「普」控制措施；若為「普」，檢視「普」控制措施。
 """
 
+
+async def get_control_measure_context(document_meta: dict | None = None) -> str:
+    from app.database import async_session
+    from app.models import ControlBaselineVersion, ControlMeasure
+
+    level = (document_meta or {}).get("protection_level", "普")
+    level_order = {"普": 0, "中": 1, "高": 2}
+    max_rank = level_order.get(level, 0)
+    included_levels = [name for name, rank in level_order.items() if rank <= max_rank]
+
+    async with async_session() as db:
+        version_result = await db.execute(
+            select(ControlBaselineVersion)
+            .where(ControlBaselineVersion.status == "active")
+            .order_by(ControlBaselineVersion.created_at.desc())
+        )
+        version = version_result.scalars().first()
+        if not version:
+            return "（尚未匯入資通系統防護基準控制措施；請先到控制措施匯入頁面上傳正式文件）"
+
+        measure_result = await db.execute(
+            select(ControlMeasure)
+            .where(ControlMeasure.version_id == version.id)
+            .where(ControlMeasure.level.in_(included_levels))
+            .order_by(ControlMeasure.domain, ControlMeasure.item, ControlMeasure.sort_order)
+        )
+        measures = measure_result.scalars().all()
+
+    if not measures:
+        return f"（目前版本 {version.name} 未找到防護需求等級 {level} 對應控制措施）"
+
+    lines = [f"使用基準版本：{version.name}", f"本次防護需求等級：{level}；應納入等級：{', '.join(included_levels)}"]
+    for measure in measures[:80]:
+        lines.append(f"- [{measure.level}] {measure.domain} / {measure.item}: {measure.requirement}")
+    if len(measures) > 80:
+        lines.append(f"...另有 {len(measures) - 80} 項控制措施未列入 prompt")
+    return "\n".join(lines)
+
 BINDING_CHECK_PROMPT = """請分析以下規格書內容，檢測是否有綁標或限制性條款。
 
 ## 審查依據
@@ -438,6 +476,7 @@ async def analyze_cost(content: str, knowledge_ids: list[str] | None = None, doc
 async def analyze_security(content: str, knowledge_ids: list[str] | None = None, document_meta: dict | None = None) -> str:
     kb = await get_knowledge_context(knowledge_ids, "security")
     security_profile = format_security_profile(document_meta)
+    control_context = await get_control_measure_context(document_meta)
     sections = [
         ("個資與資料治理", "個資保護、資料落地、資料保存、資料備份，並依防護需求等級檢查對應控制措施"),
         ("存取控制與加密", "帳號管理、最小權限、身分驗證、權限控管、傳輸加密、儲存加密，並向下包含較低等級控制措施"),
@@ -458,6 +497,9 @@ async def analyze_security(content: str, knowledge_ids: list[str] | None = None,
 
 ## 審查依據
 {kb}
+
+## 結構化控制措施
+{control_context}
 
 ## 規格書內容
 {content[:6000]}

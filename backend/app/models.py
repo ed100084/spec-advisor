@@ -24,6 +24,7 @@ class Document(Base):
     file_size: Mapped[int] = mapped_column(Integer)
     department: Mapped[str] = mapped_column(String(100), default="")
     project: Mapped[str] = mapped_column(String(200), default="")
+    is_information_system: Mapped[bool] = mapped_column(default=False)
     security_responsibility_level: Mapped[str] = mapped_column(String(1), default="A")
     confidentiality_level: Mapped[str] = mapped_column(String(1), default="普")
     integrity_level: Mapped[str] = mapped_column(String(1), default="普")
@@ -124,3 +125,31 @@ class KnowledgeBase(Base):
     enabled: Mapped[bool] = mapped_column(default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
+
+
+class ControlBaselineVersion(Base):
+    """資通系統防護基準版本"""
+    __tablename__ = "control_baseline_versions"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=gen_uuid)
+    name: Mapped[str] = mapped_column(String(255))
+    source_filename: Mapped[str] = mapped_column(String(255), default="")
+    source: Mapped[str] = mapped_column(String(255), default="")
+    effective_date: Mapped[str] = mapped_column(String(50), default="")
+    status: Mapped[str] = mapped_column(String(20), default="active")  # active, archived
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class ControlMeasure(Base):
+    """資通系統防護基準控制措施"""
+    __tablename__ = "control_measures"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=gen_uuid)
+    version_id: Mapped[str] = mapped_column(String(36), ForeignKey("control_baseline_versions.id"))
+    domain: Mapped[str] = mapped_column(String(100))
+    item: Mapped[str] = mapped_column(String(150))
+    level: Mapped[str] = mapped_column(String(1))  # 普, 中, 高
+    requirement: Mapped[str] = mapped_column(Text)
+    source_text: Mapped[str] = mapped_column(Text, default="")
+    sort_order: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
