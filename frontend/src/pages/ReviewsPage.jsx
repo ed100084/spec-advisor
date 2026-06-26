@@ -12,6 +12,9 @@ const statusLabels = { pending: '待審', approved: '通過', rejected: '退回'
 const typeLabels = {
   binding_check: '綁標檢測',
   reasonability: '合理性分析',
+  cost: '成本合理性',
+  security: '資安合規',
+  improvement: '改善建議',
   full: '完整分析',
 }
 

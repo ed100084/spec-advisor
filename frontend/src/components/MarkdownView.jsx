@@ -8,8 +8,9 @@ function preprocess(text) {
   let result = text.replace(/<br\s*\/?>/gi, '\n')
   // Ensure headings have blank line before them
   result = result.replace(/([^\n])\n(#{1,3} )/g, '$1\n\n$2')
-  // Ensure table has blank line before it
-  result = result.replace(/([^\n])\n(\|)/g, '$1\n\n$2')
+  // Ensure blank line before the FIRST row of a table block (not between table rows)
+  // A table starts when a non-pipe line is followed by a pipe line
+  result = result.replace(/([^\n|])\n(\|)/g, '$1\n\n$2')
   return result
 }
 

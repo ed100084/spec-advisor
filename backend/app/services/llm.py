@@ -95,6 +95,88 @@ FULL_ANALYSIS_PROMPT = """請對以下規格書進行完整分析。
 ## 規格書內容
 {content}"""
 
+COST_ANALYSIS_PROMPT = """請分析以下規格書的成本合理性。
+
+## 審查依據
+{knowledge_context}
+
+## 分析項目
+
+| 分析項目 | 說明 |
+|---------|------|
+| 規格等級 | 規格是否 over-spec（超出實際需求） |
+| 數量合理性 | 採購數量是否合理 |
+| 預算估算 | 依市場行情估算合理預算範圍 |
+| 替代方案 | 是否有更經濟的替代規格 |
+| 維護成本 | 後續維護/耗材/授權的長期成本 |
+| TCO 分析 | 總持有成本（Total Cost of Ownership）評估 |
+
+## 輸出格式
+請以表格呈現各項分析：
+
+| 分析項目 | 評估結果 | 說明 | 建議 |
+|---------|---------|------|------|
+
+最後給出成本優化建議（依節省金額排序）。
+
+## 規格書內容
+{content}"""
+
+SECURITY_CHECK_PROMPT = """請檢查以下規格書的資安合規性。
+
+## 審查依據
+{knowledge_context}
+
+## 檢查項目
+
+| 檢查項目 | 說明 |
+|---------|------|
+| 資通安全管理法 | 是否符合資通安全責任等級要求 |
+| 個資保護 | 是否涉及個資處理，有無相關規範 |
+| 資料落地 | 資料儲存位置是否符合規定（境內/境外） |
+| 加密要求 | 傳輸與儲存加密是否有明確要求 |
+| 存取控制 | 是否有身分驗證與權限管理要求 |
+| 稽核日誌 | 是否要求系統操作日誌與稽核軌跡 |
+| 弱點管理 | 是否要求定期弱點掃描與修補 |
+| 資安認證 | 是否要求廠商具備 ISO 27001 等認證 |
+
+## 輸出格式
+請以表格呈現各項檢查結果：
+
+| 檢查項目 | 狀態 | 現有規格描述 | 法規依據 | 改善建議 |
+|---------|------|------------|---------|---------|
+
+狀態：✅ 符合 / ⚠️ 部分符合 / ❌ 缺漏
+
+最後給出資安合規總評與優先改善事項。
+
+## 規格書內容
+{content}"""
+
+IMPROVEMENT_PROMPT = """請依據審查結果，產出改善後的規格書草稿。
+
+## 審查依據
+{knowledge_context}
+
+## 任務
+1. 分析原始規格書的問題（綁標、不合理、資安缺漏等）
+2. 直接產出**修改後的規格書**，而非只列建議
+3. 修改處用 ✏️ 標示，並在旁邊加註修改原因
+
+## 輸出格式
+
+### 修改摘要
+以表格列出所有修改：
+
+| 項次 | 原始內容 | 修改後內容 | 修改原因 | 法規依據 |
+|------|---------|----------|---------|---------|
+
+### 修改後規格書
+（直接輸出完整的修改後規格書內容，保持原有格式）
+
+## 原始規格書內容
+{content}"""
+
 TEMPLATE_PROMPT = """請根據以下需求產生一份規格書範本：
 
 類別: {category}
@@ -227,6 +309,27 @@ async def analyze_reasonability(content: str, knowledge_ids: list[str] | None = 
 async def analyze_full(content: str, knowledge_ids: list[str] | None = None) -> str:
     kb = await get_knowledge_context(knowledge_ids)
     return await call_llm(FULL_ANALYSIS_PROMPT.format(
+        knowledge_context=kb, content=content[:8000]
+    ))
+
+
+async def analyze_cost(content: str, knowledge_ids: list[str] | None = None) -> str:
+    kb = await get_knowledge_context(knowledge_ids)
+    return await call_llm(COST_ANALYSIS_PROMPT.format(
+        knowledge_context=kb, content=content[:8000]
+    ))
+
+
+async def analyze_security(content: str, knowledge_ids: list[str] | None = None) -> str:
+    kb = await get_knowledge_context(knowledge_ids)
+    return await call_llm(SECURITY_CHECK_PROMPT.format(
+        knowledge_context=kb, content=content[:8000]
+    ))
+
+
+async def analyze_improvement(content: str, knowledge_ids: list[str] | None = None) -> str:
+    kb = await get_knowledge_context(knowledge_ids)
+    return await call_llm(IMPROVEMENT_PROMPT.format(
         knowledge_context=kb, content=content[:8000]
     ))
 

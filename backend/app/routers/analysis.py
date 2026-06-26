@@ -5,7 +5,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.models import Document, Analysis
-from app.services.llm import analyze_binding, analyze_reasonability, analyze_full, compare_documents
+from app.services.llm import (
+    analyze_binding, analyze_reasonability, analyze_full,
+    analyze_cost, analyze_security, analyze_improvement,
+    compare_documents,
+)
 
 router = APIRouter(prefix="/api/analysis", tags=["analysis"])
 
@@ -80,6 +84,69 @@ async def full_analysis(doc_id: str, req: AnalysisRequest = None, db: AsyncSessi
     await db.commit()
 
     return {"id": analysis.id, "type": "full", "result": result_text}
+
+
+@router.post("/{doc_id}/cost")
+async def check_cost(doc_id: str, req: AnalysisRequest = None, db: AsyncSession = Depends(get_db)):
+    if req is None:
+        req = AnalysisRequest()
+    doc = await db.get(Document, doc_id)
+    if not doc or not doc.content_text:
+        raise HTTPException(404, "文件不存在或內容為空")
+
+    result_text = await analyze_cost(doc.content_text, knowledge_ids=req.knowledge_ids)
+
+    analysis = Analysis(
+        document_id=doc_id,
+        analysis_type="cost",
+        result={"analysis": result_text},
+    )
+    db.add(analysis)
+    await db.commit()
+
+    return {"id": analysis.id, "type": "cost", "result": result_text}
+
+
+@router.post("/{doc_id}/security")
+async def check_security(doc_id: str, req: AnalysisRequest = None, db: AsyncSession = Depends(get_db)):
+    if req is None:
+        req = AnalysisRequest()
+    doc = await db.get(Document, doc_id)
+    if not doc or not doc.content_text:
+        raise HTTPException(404, "文件不存在或內容為空")
+
+    result_text = await analyze_security(doc.content_text, knowledge_ids=req.knowledge_ids)
+
+    analysis = Analysis(
+        document_id=doc_id,
+        analysis_type="security",
+        result={"analysis": result_text},
+    )
+    db.add(analysis)
+    await db.commit()
+
+    return {"id": analysis.id, "type": "security", "result": result_text}
+
+
+@router.post("/{doc_id}/improvement")
+async def check_improvement(doc_id: str, req: AnalysisRequest = None, db: AsyncSession = Depends(get_db)):
+    if req is None:
+        req = AnalysisRequest()
+    doc = await db.get(Document, doc_id)
+    if not doc or not doc.content_text:
+        raise HTTPException(404, "文件不存在或內容為空")
+
+    result_text = await analyze_improvement(doc.content_text, knowledge_ids=req.knowledge_ids)
+
+    analysis = Analysis(
+        document_id=doc_id,
+        analysis_type="improvement",
+        result={"analysis": result_text},
+    )
+    db.add(analysis)
+    await db.commit()
+
+    return {"id": analysis.id, "type": "improvement", "result": result_text}
 
 
 @router.post("/compare")

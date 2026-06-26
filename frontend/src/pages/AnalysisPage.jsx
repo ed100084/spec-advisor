@@ -1,11 +1,18 @@
 import { useState, useEffect } from 'react'
-import { Search, Shield, CheckCircle, Loader2, BookOpen } from 'lucide-react'
-import { getDocuments, analyzeBinding, analyzeReasonability, analyzeFull, getAnalysisHistory, getKnowledgeList } from '../api'
+import { Search, Shield, CheckCircle, Loader2, BookOpen, DollarSign, ShieldCheck, FileEdit } from 'lucide-react'
+import {
+  getDocuments, analyzeBinding, analyzeReasonability, analyzeFull,
+  analyzeCost, analyzeSecurity, analyzeImprovement,
+  getAnalysisHistory, getKnowledgeList,
+} from '../api'
 import MarkdownView from '../components/MarkdownView'
 
 const analysisTypes = [
   { key: 'binding', label: '綁標檢測', icon: Shield, fn: analyzeBinding, color: 'red' },
   { key: 'reasonability', label: '合理性分析', icon: CheckCircle, fn: analyzeReasonability, color: 'yellow' },
+  { key: 'cost', label: '成本合理性', icon: DollarSign, fn: analyzeCost, color: 'green' },
+  { key: 'security', label: '資安合規', icon: ShieldCheck, fn: analyzeSecurity, color: 'purple' },
+  { key: 'improvement', label: '改善建議', icon: FileEdit, fn: analyzeImprovement, color: 'teal' },
   { key: 'full', label: '完整分析', icon: Search, fn: analyzeFull, color: 'blue' },
 ]
 
@@ -155,7 +162,7 @@ export default function AnalysisPage() {
       </div>
 
       {/* Analysis Buttons */}
-      <div className="flex gap-3 mb-6">
+      <div className="flex flex-wrap gap-3 mb-6">
         {analysisTypes.map((type) => {
           const Icon = type.icon
           return (
@@ -166,6 +173,9 @@ export default function AnalysisPage() {
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-white transition-colors disabled:opacity-50 ${
                 type.color === 'red' ? 'bg-red-600 hover:bg-red-700' :
                 type.color === 'yellow' ? 'bg-amber-600 hover:bg-amber-700' :
+                type.color === 'green' ? 'bg-emerald-600 hover:bg-emerald-700' :
+                type.color === 'purple' ? 'bg-purple-600 hover:bg-purple-700' :
+                type.color === 'teal' ? 'bg-teal-600 hover:bg-teal-700' :
                 'bg-blue-600 hover:bg-blue-700'
               }`}
             >
