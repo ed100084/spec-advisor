@@ -102,21 +102,21 @@ export default function ControlsPage() {
         <p className="text-sm text-gray-500 mb-4">
           上傳 PDF/Word/Excel/TXT，系統會先解析文字，再由 AI 萃取成「控制領域 / 控制項 / 等級 / 要求」資料表。未來法規更新時可匯入新版本並保留舊版本。
         </p>
-        <form onSubmit={handleUpload} className="grid grid-cols-5 gap-3 items-end">
-          <input name="name" placeholder="版本名稱（如：防護基準 113版）" className="border rounded-lg px-3 py-2" required />
-          <input name="source" placeholder="來源（如：數位發展部）" className="border rounded-lg px-3 py-2" />
-          <input name="effective_date" placeholder="生效日期" className="border rounded-lg px-3 py-2" />
-          <input name="expected_count" type="number" min="1" placeholder="預期項數（如：81）" className="border rounded-lg px-3 py-2" />
-          <input name="file" type="file" accept=".pdf,.docx,.xlsx,.xls,.txt" className="text-sm" required />
-          <button disabled={uploading} className="col-span-5 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
+        <form onSubmit={handleUpload} className="grid grid-cols-1 gap-3 md:grid-cols-5 md:items-end">
+          <input name="name" placeholder="版本名稱（如：防護基準 113版）" className="min-w-0 border rounded-lg px-3 py-2" required />
+          <input name="source" placeholder="來源（如：數位發展部）" className="min-w-0 border rounded-lg px-3 py-2" />
+          <input name="effective_date" placeholder="生效日期" className="min-w-0 border rounded-lg px-3 py-2" />
+          <input name="expected_count" type="number" min="1" placeholder="預期項數（如：81）" className="min-w-0 border rounded-lg px-3 py-2" />
+          <input name="file" type="file" accept=".pdf,.docx,.xlsx,.xls,.txt" className="min-w-0 text-sm" required />
+          <button disabled={uploading} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 md:col-span-5">
             {uploading ? '匯入中，請稍候...' : '開始匯入'}
           </button>
         </form>
       </div>
 
-      <div className="flex items-center gap-3 mb-4">
+      <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center">
         <Database size={16} className="text-gray-400" />
-        <select value={selectedVersion} onChange={(e) => setSelectedVersion(e.target.value)} className="border rounded-lg px-3 py-2 text-sm min-w-[260px]">
+        <select value={selectedVersion} onChange={(e) => setSelectedVersion(e.target.value)} className="min-w-0 border rounded-lg px-3 py-2 text-sm md:min-w-[260px]">
           <option value="">全部版本</option>
           {versions.map((v) => <option key={v.id} value={v.id}>{v.name}（{v.measure_count}項）</option>)}
         </select>
@@ -142,18 +142,59 @@ export default function ControlsPage() {
         </div>
       )}
 
-      <form onSubmit={handleCreateMeasure} className="bg-white rounded-xl shadow-sm p-4 mb-4 grid grid-cols-12 gap-3 items-start">
+      <form onSubmit={handleCreateMeasure} className="bg-white rounded-xl shadow-sm p-4 mb-4 grid grid-cols-1 gap-3 md:grid-cols-12 md:items-start">
         <div className="col-span-12 flex items-center gap-2 font-semibold text-sm"><Plus size={16} /> 新增控制措施</div>
-        <input value={newMeasure.domain} onChange={(e) => setNewMeasure({ ...newMeasure, domain: e.target.value })} placeholder="領域" className="col-span-2 border rounded-lg px-3 py-2 text-sm" />
-        <input value={newMeasure.item} onChange={(e) => setNewMeasure({ ...newMeasure, item: e.target.value })} placeholder="控制項" className="col-span-2 border rounded-lg px-3 py-2 text-sm" />
-        <select value={newMeasure.level} onChange={(e) => setNewMeasure({ ...newMeasure, level: e.target.value })} className="col-span-1 border rounded-lg px-3 py-2 text-sm">
+        <input value={newMeasure.domain} onChange={(e) => setNewMeasure({ ...newMeasure, domain: e.target.value })} placeholder="領域" className="min-w-0 border rounded-lg px-3 py-2 text-sm md:col-span-2" />
+        <input value={newMeasure.item} onChange={(e) => setNewMeasure({ ...newMeasure, item: e.target.value })} placeholder="控制項" className="min-w-0 border rounded-lg px-3 py-2 text-sm md:col-span-2" />
+        <select value={newMeasure.level} onChange={(e) => setNewMeasure({ ...newMeasure, level: e.target.value })} className="border rounded-lg px-3 py-2 text-sm md:col-span-1">
           {['普', '中', '高'].map((level) => <option key={level} value={level}>{level}</option>)}
         </select>
-        <textarea value={newMeasure.requirement} onChange={(e) => setNewMeasure({ ...newMeasure, requirement: e.target.value })} placeholder="要求" className="col-span-5 border rounded-lg px-3 py-2 text-sm min-h-[42px]" required />
-        <button className="col-span-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700">新增</button>
+        <textarea value={newMeasure.requirement} onChange={(e) => setNewMeasure({ ...newMeasure, requirement: e.target.value })} placeholder="要求" className="min-w-0 border rounded-lg px-3 py-2 text-sm min-h-[88px] md:col-span-5 md:min-h-[42px]" required />
+        <button className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 md:col-span-2">新增</button>
       </form>
 
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+      <div className="space-y-3 md:hidden">
+        {measures.map((m) => (
+          <div key={m.id} className="rounded-xl bg-white p-4 shadow-sm">
+            {editingId === m.id ? (
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-2">
+                  <input value={editForm.domain} onChange={(e) => setEditForm({ ...editForm, domain: e.target.value })} className="min-w-0 border rounded px-2 py-2 text-sm" placeholder="領域" />
+                  <input value={editForm.item} onChange={(e) => setEditForm({ ...editForm, item: e.target.value })} className="min-w-0 border rounded px-2 py-2 text-sm" placeholder="控制項" />
+                </div>
+                <select value={editForm.level} onChange={(e) => setEditForm({ ...editForm, level: e.target.value })} className="w-full border rounded px-2 py-2 text-sm">
+                  {['普', '中', '高'].map((level) => <option key={level} value={level}>{level}</option>)}
+                </select>
+                <textarea value={editForm.requirement} onChange={(e) => setEditForm({ ...editForm, requirement: e.target.value })} className="w-full border rounded px-2 py-2 text-sm min-h-[120px]" />
+                <div className="flex justify-end gap-2">
+                  <button type="button" onClick={() => setEditingId('')} className="px-3 py-2 text-sm text-gray-600">取消</button>
+                  <button type="button" onClick={() => saveEdit(m.id)} className="px-3 py-2 text-sm bg-emerald-600 text-white rounded-lg">儲存</button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="mb-2 flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-xs text-gray-500 break-words">{m.domain}</div>
+                    <div className="font-semibold text-gray-900 break-words">{m.item}</div>
+                  </div>
+                  <span className="shrink-0 px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-xs">{m.level}</span>
+                </div>
+                <p className="whitespace-pre-wrap break-words text-sm leading-6 text-gray-700">{m.requirement}</p>
+                <div className="mt-3 flex justify-end gap-3 border-t pt-3">
+                  <button onClick={() => startEdit(m)} className="flex items-center gap-1 text-sm text-blue-600" title="編輯"><Edit3 size={15} /> 編輯</button>
+                  <button onClick={() => handleDeleteMeasure(m)} className="flex items-center gap-1 text-sm text-red-500" title="刪除"><Trash2 size={15} /> 刪除</button>
+                </div>
+              </>
+            )}
+          </div>
+        ))}
+        {measures.length === 0 && (
+          <div className="rounded-xl bg-white px-4 py-10 text-center text-gray-400 shadow-sm">尚無控制措施資料</div>
+        )}
+      </div>
+
+      <div className="hidden bg-white rounded-xl shadow-sm overflow-hidden md:block">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-left text-gray-500">
             <tr>
