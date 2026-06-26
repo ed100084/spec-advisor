@@ -20,6 +20,7 @@ export default function KnowledgePage() {
   const [showAdd, setShowAdd] = useState(false)
   const [showUpload, setShowUpload] = useState(false)
   const [viewItem, setViewItem] = useState(null)
+  const [uploading, setUploading] = useState(false)
   const [form, setForm] = useState({ name: '', category: 'law', source: '', content: '' })
 
   const load = async () => {
@@ -40,9 +41,17 @@ export default function KnowledgePage() {
   const handleUpload = async (e) => {
     e.preventDefault()
     const fd = new FormData(e.target)
-    await uploadKnowledge(fd)
-    setShowUpload(false)
-    await load()
+    setUploading(true)
+    try {
+      await uploadKnowledge(fd)
+      setShowUpload(false)
+      e.target.reset()
+      await load()
+    } catch (err) {
+      alert(`上傳失敗: ${err.response?.data?.detail || err.message}`)
+    } finally {
+      setUploading(false)
+    }
   }
 
   const handleToggle = async (item) => {
@@ -144,8 +153,8 @@ export default function KnowledgePage() {
           </div>
           <input name="file" type="file" accept=".pdf,.docx,.xlsx,.xls,.txt" className="mb-4" required />
           <br />
-          <button type="submit" className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700">
-            上傳並解析
+          <button type="submit" disabled={uploading} className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50">
+            {uploading ? '上傳解析中...' : '上傳並解析'}
           </button>
         </form>
       )}

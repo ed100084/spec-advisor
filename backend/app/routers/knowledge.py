@@ -1,5 +1,7 @@
 """知識庫管理 API - 法規、院內規章、產業標準"""
+import asyncio
 import shutil
+import uuid
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
@@ -46,7 +48,7 @@ async def create_knowledge(req: KnowledgeCreate, db: AsyncSession = Depends(get_
         content=req.content,
     )
     db.add(kb)
-    await db.commit()
+    await commit_with_retry(db)
     await db.refresh(kb)
     return _to_dict(kb)
 
@@ -65,7 +67,7 @@ async def upload_knowledge(
         raise HTTPException(400, f"不支援的檔案格式: {suffix}")
 
     # Save temp file and parse
-    temp_path = Path(settings.upload_dir) / f"kb_temp{suffix}"
+    temp_path = Path(settings.upload_dir) / f"kb_temp_{uuid.uuid4().hex}{suffix}"
     with open(temp_path, "wb") as f:
         shutil.copyfileobj(file.file, f)
 
@@ -86,7 +88,7 @@ async def upload_knowledge(
         content=content,
     )
     db.add(kb)
-    await db.commit()
+    await commit_with_retry(db)
     await db.refresh(kb)
     return _to_dict(kb)
 
@@ -149,3 +151,15 @@ def _to_dict(kb: KnowledgeBase, include_content: bool = False):
     if include_content:
         d["content"] = kb.content
     return d
+
+
+async def commit_with_retry(db: AsyncSession, retries: int = 5):
+    for attempt in range(retries):
+        try:
+            await db.commit()
+            return
+        except Exception as exc:
+            await db.rollback()
+            if "database is locked" not in str(exc).lower() or attempt == retries - 1:
+                raise HTTPException(500, f"資料庫寫入失敗: {exc}")
+            await asyncio.sleep(0.5 * (attempt + 1))
