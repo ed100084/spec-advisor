@@ -4,8 +4,7 @@ import rehypeRaw from 'rehype-raw'
 
 function preprocess(text) {
   if (!text) return ''
-  // Normalize <br> variants to actual line breaks for Markdown
-  let result = text.replace(/<br\s*\/?>/gi, '\n')
+  let result = text
   // Ensure headings have blank line before them
   result = result.replace(/([^\n])\n(#{1,3} )/g, '$1\n\n$2')
   // Ensure blank line before the FIRST row of a table block (not between table rows)
