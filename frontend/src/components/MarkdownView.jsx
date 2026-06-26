@@ -7,6 +7,8 @@ function preprocess(text) {
   let result = text
   // Ensure headings have blank line before them
   result = result.replace(/([^\n])\n(#{1,3} )/g, '$1\n\n$2')
+  // Keep numbered spec sections from collapsing into one paragraph.
+  result = result.replace(/([^\n|])\n(\*\*\d+(?:\.\d+)*[.、 ]|\d+(?:\.\d+)+[.、 ]|\d+[.、 ]\S)/g, '$1\n\n$2')
   // Ensure blank line before the FIRST row of a table block (not between table rows)
   // A table starts when a non-pipe line is followed by a pipe line
   result = result.replace(/([^\n|])\n(\|)/g, '$1\n\n$2')
