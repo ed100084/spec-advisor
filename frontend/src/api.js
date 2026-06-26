@@ -35,6 +35,8 @@ export const analyzeCost = (docId, knowledgeIds) =>
   api.post(`/analysis/${docId}/cost`, { knowledge_ids: knowledgeIds })
 export const analyzeSecurity = (docId, knowledgeIds) =>
   api.post(`/analysis/${docId}/security`, { knowledge_ids: knowledgeIds })
+export const analyzeIntellectualProperty = (docId, knowledgeIds) =>
+  api.post(`/analysis/${docId}/intellectual-property`, { knowledge_ids: knowledgeIds })
 export const analyzeImprovement = (docId, knowledgeIds) =>
   api.post(`/analysis/${docId}/improvement`, { knowledge_ids: knowledgeIds })
 export const getAnalysisJob = (jobId) => api.get(`/analysis/jobs/${jobId}`)

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
-import { Search, Shield, CheckCircle, Loader2, BookOpen, DollarSign, ShieldCheck, FileEdit } from 'lucide-react'
+import { Search, Shield, CheckCircle, Loader2, BookOpen, DollarSign, ShieldCheck, FileEdit, KeyRound } from 'lucide-react'
 import {
   getDocuments, analyzeBinding, analyzeReasonability, analyzeFull,
-  analyzeCost, analyzeSecurity, analyzeImprovement,
+  analyzeCost, analyzeSecurity, analyzeIntellectualProperty, analyzeImprovement,
   getAnalysisHistory, getKnowledgeList, getAnalysisJob, getActiveJobs,
 } from '../api'
 import MarkdownView from '../components/MarkdownView'
@@ -12,6 +12,7 @@ const analysisTypes = [
   { key: 'reasonability', label: '合理性分析', icon: CheckCircle, fn: analyzeReasonability, color: 'yellow' },
   { key: 'cost', label: '成本合理性', icon: DollarSign, fn: analyzeCost, color: 'green' },
   { key: 'security', label: '資安合規', icon: ShieldCheck, fn: analyzeSecurity, color: 'purple' },
+  { key: 'intellectual_property', label: '智財授權檢視', icon: KeyRound, fn: analyzeIntellectualProperty, color: 'indigo' },
   { key: 'improvement', label: '改善建議', icon: FileEdit, fn: analyzeImprovement, color: 'teal' },
   { key: 'full', label: '完整分析', icon: Search, fn: analyzeFull, color: 'blue' },
 ]
@@ -21,6 +22,7 @@ const typeLabels = {
   reasonability: '合理性分析',
   cost: '成本合理性',
   security: '資安合規',
+  intellectual_property: '智財授權檢視',
   improvement: '改善建議',
   full: '完整分析',
 }
@@ -260,6 +262,7 @@ export default function AnalysisPage() {
                 type.color === 'yellow' ? 'bg-amber-600 hover:bg-amber-700' :
                 type.color === 'green' ? 'bg-emerald-600 hover:bg-emerald-700' :
                 type.color === 'purple' ? 'bg-purple-600 hover:bg-purple-700' :
+                type.color === 'indigo' ? 'bg-indigo-600 hover:bg-indigo-700' :
                 type.color === 'teal' ? 'bg-teal-600 hover:bg-teal-700' :
                 'bg-blue-600 hover:bg-blue-700'
               }`}

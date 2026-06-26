@@ -236,6 +236,40 @@ SECURITY_CHECK_PROMPT = """請檢查以下規格書的資安合規性。
 ## 規格書內容
 {content}"""
 
+INTELLECTUAL_PROPERTY_PROMPT = """請檢查以下規格書的智財權與授權風險。
+
+## 審查依據
+{knowledge_context}
+
+## 檢查項目
+
+| 檢查項目 | 說明 |
+|---------|------|
+| 智財權歸屬 | 客製成果、文件、程式、報表、介面、資料模型、訓練成果或設定檔之權利歸屬是否清楚 |
+| 授權範圍 | 使用者數、裝置數、院區數、併發數、CPU/Core、VM、Container、測試/備援/災復環境是否明確 |
+| 授權期間 | 永久授權、訂閱、維護期、升級權、展延條件與終止後使用權是否明確 |
+| 第三方與開源元件 | 是否要求揭露第三方元件、Open Source 授權、授權相容性與安全更新責任 |
+| 維護與移轉 | 是否限制只能由原廠或特定廠商維護，或限制轉移、整合、接續維護 |
+| 資料權利與退場 | 資料所有權、資料可攜性、匯出格式、刪除、返還、終止後轉移與協助義務是否明確 |
+| 授權稽核與罰則 | 稽核權、補授權、違約金、停權、中止服務條款是否合理且不影響醫療營運 |
+| 採購公平性 | 授權或智財條款是否造成限制競爭、指定廠商、排除同等品或不合理續約依賴 |
+
+## 輸出格式
+請以表格呈現各項檢查結果：
+
+| 檢查項目 | 風險等級 | 現有規格描述 | 審查依據 | 改善建議 |
+|---------|---------|------------|---------|---------|
+
+風險等級：高 / 中 / 低 / 未提及 / 可接受
+
+最後請提供：
+1. 智財權與授權總評
+2. 建議補強條款（可直接放入規格書或契約）
+3. 需請法務或採購確認的事項
+
+## 規格書內容
+{content}"""
+
 IMPROVEMENT_PROMPT = """請依據審查結果，產出改善後的規格書草稿。
 
 ## 審查依據
@@ -386,6 +420,7 @@ def get_keywords_for_analysis(analysis_type: str) -> list[str]:
         "reasonability": ["驗收", "規格", "合理", "功能", "需求", "履約", "標準"],
         "cost": ["預算", "成本", "TCO", "維護", "授權", "耗材", "價格"],
         "security": ["資安", "資通安全", "個資", "加密", "日誌", "稽核", "權限", "備份", "弱點"],
+        "intellectual_property": ["智財", "智慧財產", "著作權", "授權", "永久", "訂閱", "開源", "第三方", "原始碼", "資料所有權", "移轉", "維護"],
         "improvement": ["政府採購", "限制競爭", "資安", "驗收", "履約", "規格"],
         "full": ["政府採購", "限制競爭", "資安", "驗收", "履約", "成本", "規格"],
     }
@@ -523,6 +558,13 @@ async def analyze_security(content: str, knowledge_ids: list[str] | None = None,
         partial = sum(1 for item in merged["findings"] if "部分" in str(item.get("status", "")) or "⚠" in str(item.get("status", "")))
         merged["overall_score"] = max(0, 100 - missing * 15 - partial * 8)
     return structured_to_markdown(merged)
+
+
+async def analyze_intellectual_property(content: str, knowledge_ids: list[str] | None = None, document_meta: dict | None = None) -> str:
+    kb = await get_knowledge_context(knowledge_ids, "intellectual_property")
+    return await call_llm(INTELLECTUAL_PROPERTY_PROMPT.format(
+        knowledge_context=kb, content=content[:8000]
+    ))
 
 
 async def analyze_improvement(content: str, knowledge_ids: list[str] | None = None, document_meta: dict | None = None) -> str:

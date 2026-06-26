@@ -9,6 +9,7 @@ from app.services.llm import (
     analyze_full,
     analyze_cost,
     analyze_security,
+    analyze_intellectual_property,
     analyze_improvement,
 )
 
@@ -17,6 +18,7 @@ ANALYSIS_HANDLERS = {
     "reasonability": analyze_reasonability,
     "cost": analyze_cost,
     "security": analyze_security,
+    "intellectual_property": analyze_intellectual_property,
     "improvement": analyze_improvement,
     "full": analyze_full,
 }
@@ -26,6 +28,7 @@ ANALYSIS_LABELS = {
     "reasonability": "合理性分析",
     "cost": "成本合理性",
     "security": "資安合規",
+    "intellectual_property": "智財授權檢視",
     "improvement": "改善建議",
     "full": "完整分析",
 }

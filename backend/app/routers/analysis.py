@@ -79,6 +79,11 @@ async def check_security(doc_id: str, req: AnalysisRequest = None, db: AsyncSess
     return await create_analysis_job(doc_id, "security", req, db)
 
 
+@router.post("/{doc_id}/intellectual-property")
+async def check_intellectual_property(doc_id: str, req: AnalysisRequest = None, db: AsyncSession = Depends(get_db)):
+    return await create_analysis_job(doc_id, "intellectual_property", req, db)
+
+
 @router.post("/{doc_id}/improvement")
 async def check_improvement(doc_id: str, req: AnalysisRequest = None, db: AsyncSession = Depends(get_db)):
     return await create_analysis_job(doc_id, "improvement", req, db)
