@@ -1,16 +1,18 @@
 import { Routes, Route, NavLink } from 'react-router-dom'
-import { FileText, Search, GitCompare, Users, BookTemplate, BookOpen } from 'lucide-react'
+import { FileText, Search, GitCompare, Users, BookTemplate, BookOpen, FileCheck } from 'lucide-react'
 import DocumentsPage from './pages/DocumentsPage'
 import AnalysisPage from './pages/AnalysisPage'
 import ComparePage from './pages/ComparePage'
 import ReviewsPage from './pages/ReviewsPage'
 import TemplatesPage from './pages/TemplatesPage'
 import KnowledgePage from './pages/KnowledgePage'
+import BidNoticePage from './pages/BidNoticePage'
 
 const navItems = [
   { to: '/', icon: FileText, label: '文件管理' },
   { to: '/analysis', icon: Search, label: 'AI 分析' },
   { to: '/compare', icon: GitCompare, label: '規格比對' },
+  { to: '/bid', icon: FileCheck, label: '投標須知' },
   { to: '/reviews', icon: Users, label: '協作審閱' },
   { to: '/templates', icon: BookTemplate, label: '範本產生' },
   { to: '/knowledge', icon: BookOpen, label: '知識庫' },
@@ -55,6 +57,7 @@ export default function App() {
           <Route path="/compare" element={<ComparePage />} />
           <Route path="/reviews" element={<ReviewsPage />} />
           <Route path="/templates" element={<TemplatesPage />} />
+          <Route path="/bid" element={<BidNoticePage />} />
           <Route path="/knowledge" element={<KnowledgePage />} />
         </Routes>
       </main>

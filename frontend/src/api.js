@@ -26,6 +26,15 @@ export const getReviews = (docId) => api.get(`/reviews/document/${docId}`)
 export const updateReviewStatus = (reviewId, status) =>
   api.patch(`/reviews/${reviewId}`, { status })
 
+// Bid Notice
+export const uploadBidTemplate = (form) => api.post('/bid/templates', form)
+export const getBidTemplates = () => api.get('/bid/templates')
+export const deleteBidTemplate = (id) => api.delete(`/bid/templates/${id}`)
+export const generateBidNotice = (documentId, templateId) =>
+  api.post('/bid/generate', { document_id: documentId, template_id: templateId })
+export const getBidHistory = (documentId) =>
+  api.get('/bid/history', { params: documentId ? { document_id: documentId } : {} })
+
 // Knowledge Base
 export const getKnowledgeList = () => api.get('/knowledge')
 export const getKnowledgeCategories = () => api.get('/knowledge/categories')

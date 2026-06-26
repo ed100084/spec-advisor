@@ -110,6 +110,34 @@ TEMPLATE_PROMPT = """請根據以下需求產生一份規格書範本：
 
 請使用表格格式，並確保規格書不含綁標條款。"""
 
+BID_NOTICE_PROMPT = """你是一位專業的政府採購投標須知填寫顧問。
+
+## 任務
+請依據下方的「規格書內容」，填寫「投標須知範本」中的各個欄位。
+
+## 採購類別
+{procurement_type}
+
+## 填寫原則
+1. 嚴格依照範本的格式和欄位結構填寫
+2. 依據規格書內容推斷合理的填寫值
+3. 無法從規格書推斷的欄位，標註【待確認】並給出建議值
+4. 廠商資格條件應合理，不得有綁標嫌疑
+5. 評選方式依規格書複雜度建議（簡單→最低標，複雜→最有利標）
+6. 履約期限依規格書工作範圍合理估算
+
+## 投標須知範本
+{template_content}
+
+## 規格書內容
+{spec_content}
+
+## 輸出格式
+請直接輸出填寫完成的投標須知，保持範本原有格式。
+對於 AI 填入的內容，用 **粗體** 標示。
+對於需要人工確認的欄位，用 ⚠️【待確認】標示。
+最後附上一段「填寫說明」，解釋各項填寫的依據。"""
+
 COMPARE_PROMPT = """請比較以下兩份規格書的差異：
 
 === 規格書 A ===
@@ -204,4 +232,12 @@ async def compare_documents(content_a: str, content_b: str) -> str:
     return await call_llm(COMPARE_PROMPT.format(
         content_a=content_a[:4000],
         content_b=content_b[:4000],
+    ))
+
+
+async def generate_bid_notice(spec_content: str, template_content: str, procurement_type: str) -> str:
+    return await call_llm(BID_NOTICE_PROMPT.format(
+        procurement_type=procurement_type,
+        template_content=template_content[:6000],
+        spec_content=spec_content[:6000],
     ))

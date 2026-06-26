@@ -65,6 +65,29 @@ class Template(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
 
+class BidTemplate(Base):
+    """投標須知範本"""
+    __tablename__ = "bid_templates"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=gen_uuid)
+    name: Mapped[str] = mapped_column(String(255))
+    procurement_type: Mapped[str] = mapped_column(String(20))  # goods, services, engineering
+    file_path: Mapped[str] = mapped_column(String(500))
+    content_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class BidNotice(Base):
+    """AI 產生的投標須知"""
+    __tablename__ = "bid_notices"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=gen_uuid)
+    document_id: Mapped[str] = mapped_column(String(36), ForeignKey("documents.id"))
+    template_id: Mapped[str] = mapped_column(String(36), ForeignKey("bid_templates.id"))
+    result: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
 class KnowledgeBase(Base):
     __tablename__ = "knowledge_base"
 
