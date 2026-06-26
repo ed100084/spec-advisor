@@ -35,3 +35,36 @@ async def get_db():
 async def init_db():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        if settings.database_url.startswith("sqlite"):
+            await ensure_sqlite_schema(conn)
+
+
+async def ensure_sqlite_schema(conn):
+    """Non-destructive SQLite schema patching for early deployments.
+
+    This only adds missing columns. It never drops tables or data.
+    """
+    await ensure_columns(conn, "documents", {
+        "department": "VARCHAR(100) DEFAULT ''",
+        "project": "VARCHAR(200) DEFAULT ''",
+        "is_information_system": "BOOLEAN DEFAULT 0",
+        "security_responsibility_level": "VARCHAR(1) DEFAULT 'A'",
+        "confidentiality_level": "VARCHAR(1) DEFAULT '普'",
+        "integrity_level": "VARCHAR(1) DEFAULT '普'",
+        "availability_level": "VARCHAR(1) DEFAULT '普'",
+        "legal_compliance_level": "VARCHAR(1) DEFAULT '普'",
+        "protection_level": "VARCHAR(1) DEFAULT '普'",
+        "system_importance": "VARCHAR(255) DEFAULT ''",
+        "processes_personal_data": "BOOLEAN DEFAULT 0",
+        "personal_data_description": "VARCHAR(500) DEFAULT ''",
+    })
+
+
+async def ensure_columns(conn, table_name: str, columns: dict[str, str]):
+    result = await conn.exec_driver_sql(f"PRAGMA table_info({table_name})")
+    existing = {row[1] for row in result.fetchall()}
+    for column_name, column_type in columns.items():
+        if column_name not in existing:
+            await conn.exec_driver_sql(
+                f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_type}"
+            )
