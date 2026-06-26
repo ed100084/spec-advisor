@@ -32,6 +32,8 @@ class Document(Base):
     legal_compliance_level: Mapped[str] = mapped_column(String(1), default="普")
     protection_level: Mapped[str] = mapped_column(String(1), default="普")
     system_importance: Mapped[str] = mapped_column(String(255), default="")
+    processes_personal_data: Mapped[bool] = mapped_column(default=False)
+    personal_data_description: Mapped[str] = mapped_column(String(500), default="")
     content_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     uploaded_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 

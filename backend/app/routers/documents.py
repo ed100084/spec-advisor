@@ -28,6 +28,8 @@ async def upload_document(
     availability_level: str = Form("普"),
     legal_compliance_level: str = Form("普"),
     system_importance: str = Form(""),
+    processes_personal_data: bool = Form(False),
+    personal_data_description: str = Form(""),
     db: AsyncSession = Depends(get_db),
 ):
     suffix = Path(file.filename).suffix.lower()
@@ -56,6 +58,8 @@ async def upload_document(
             legal_compliance_level,
         ),
         system_importance=system_importance,
+        processes_personal_data=processes_personal_data,
+        personal_data_description=personal_data_description,
     )
     save_path = Path(settings.upload_dir) / f"{doc.id}{suffix}"
     doc.file_path = str(save_path)
@@ -143,6 +147,8 @@ def _doc_dict(doc: Document, preview: bool = False, include_content: bool = Fals
         "legal_compliance_level": doc.legal_compliance_level,
         "protection_level": doc.protection_level,
         "system_importance": doc.system_importance,
+        "processes_personal_data": doc.processes_personal_data,
+        "personal_data_description": doc.personal_data_description,
         "uploaded_at": doc.uploaded_at.isoformat(),
     }
     if preview:

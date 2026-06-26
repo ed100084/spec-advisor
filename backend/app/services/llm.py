@@ -34,6 +34,7 @@ STRUCTURED_OUTPUT_INSTRUCTIONS = """請只輸出以下 JSON 結構：
 def format_security_profile(document_meta: dict | None = None) -> str:
     meta = document_meta or {}
     return f"""## 資通訊系統導入分級資訊
+- 是否為資通系統：{'是' if meta.get('is_information_system') else '否'}
 - 組織資安責任等級：{meta.get('security_responsibility_level', 'A')}
 - 機密性防護需求：{meta.get('confidentiality_level', '普')}
 - 完整性防護需求：{meta.get('integrity_level', '普')}
@@ -41,6 +42,12 @@ def format_security_profile(document_meta: dict | None = None) -> str:
 - 法律遵循性防護需求：{meta.get('legal_compliance_level', '普')}
 - 推導後資通系統防護需求等級：{meta.get('protection_level', '普')}
 - 系統重要性 / 判斷原因：{meta.get('system_importance', '未填寫')}
+- 是否處理個人資料：{'是' if meta.get('processes_personal_data') else '否'}
+- 個資處理說明：{meta.get('personal_data_description', '未填寫')}
+
+法源定義：
+- 《資通安全管理法》第3條第1款：資通系統係指「用以蒐集、控制、傳輸、儲存、流通、刪除資訊或對資訊為其他處理、使用或分享之系統。」
+- 《個人資料保護法》第2條第1款：個人資料係指自然人之姓名、出生年月日、國民身分證統一編號、護照號碼、特徵、指紋、婚姻、家庭、教育、職業、病歷、醫療、基因、性生活、健康檢查、犯罪前科、聯絡方式、財務情況、社會活動及其他得以直接或間接方式識別該個人之資料。
 
 判斷原則：資通系統之防護需求等級，以與該系統相關之機密性、完整性、可用性及法律遵循性構面中，任一構面之防護需求等級之最高者定之。
 控制措施套用原則：若防護需求等級為「高」，應檢視「高」之控制措施，且高等級要求含「中」之所有控制措施；「中」又含「普」之所有控制措施。若為「中」，應檢視「中」及「普」控制措施；若為「普」，檢視「普」控制措施。

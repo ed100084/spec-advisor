@@ -40,6 +40,8 @@ export default function DocumentsPage() {
   const [availabilityLevel, setAvailabilityLevel] = useState('普')
   const [legalComplianceLevel, setLegalComplianceLevel] = useState('普')
   const [systemImportance, setSystemImportance] = useState('')
+  const [processesPersonalData, setProcessesPersonalData] = useState(false)
+  const [personalDataDescription, setPersonalDataDescription] = useState('')
   const [showUploadForm, setShowUploadForm] = useState(false)
   const [pendingFiles, setPendingFiles] = useState([])
 
@@ -75,6 +77,8 @@ export default function DocumentsPage() {
           availabilityLevel,
           legalComplianceLevel,
           systemImportance,
+          processesPersonalData,
+          personalDataDescription,
         })
       }
       setPendingFiles([])
@@ -193,6 +197,9 @@ export default function DocumentsPage() {
               />
               這份規格書是資通訊系統導入案，需要依資通系統防護需求分級與防護基準檢視
             </label>
+            <div className="text-xs text-gray-600 bg-white border rounded-lg p-3 mb-3 leading-relaxed">
+              <strong>資通系統定義：</strong>依《資通安全管理法》第3條第1款，係指「用以蒐集、控制、傳輸、儲存、流通、刪除資訊或對資訊為其他處理、使用或分享之系統。」
+            </div>
             {!isInformationSystem ? (
               <p className="text-xs text-gray-500">
                 若不是資通訊系統，可略過資安責任等級與防護需求分級；後續 AI 分析也不會套用資通系統防護基準。
@@ -249,6 +256,33 @@ export default function DocumentsPage() {
               </div>
                 </div>
               </>
+            )}
+          </div>
+
+          <div className="border rounded-xl p-4 mb-4 bg-rose-50">
+            <h4 className="font-semibold text-sm mb-2">個人資料處理確認</h4>
+            <label className="flex items-center gap-2 text-sm mb-3">
+              <input
+                type="checkbox"
+                checked={processesPersonalData}
+                onChange={(e) => setProcessesPersonalData(e.target.checked)}
+                className="rounded"
+              />
+              本案會處理個人資料，需要檢視個資保護要求
+            </label>
+            <div className="text-xs text-gray-600 bg-white border rounded-lg p-3 mb-3 leading-relaxed">
+              <strong>個人資料定義：</strong>依《個人資料保護法》第2條第1款，指自然人之姓名、出生年月日、國民身分證統一編號、護照號碼、特徵、指紋、婚姻、家庭、教育、職業、病歷、醫療、基因、性生活、健康檢查、犯罪前科、聯絡方式、財務情況、社會活動及其他得以直接或間接方式識別該個人之資料。
+            </div>
+            {processesPersonalData && (
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">個資處理說明</label>
+                <input
+                  value={personalDataDescription}
+                  onChange={(e) => setPersonalDataDescription(e.target.value)}
+                  placeholder="例如：系統會處理病歷、身分證號、聯絡方式與就醫紀錄"
+                  className="w-full border rounded-lg px-3 py-2 text-sm"
+                />
+              </div>
             )}
           </div>
 
@@ -337,7 +371,7 @@ export default function DocumentsPage() {
                             <td className="px-4 py-2 uppercase text-gray-500">{doc.file_type}</td>
                             <td className="px-4 py-2 text-gray-500">
                               <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
-                                {doc.is_information_system ? `責任${doc.security_responsibility_level || 'A'} / 防護${doc.protection_level || '普'}` : '非資通系統'}
+                                {doc.is_information_system ? `責任${doc.security_responsibility_level || 'A'} / 防護${doc.protection_level || '普'}` : '非資通系統'}{doc.processes_personal_data ? ' / 個資' : ''}
                               </span>
                             </td>
                             <td className="px-4 py-2 text-gray-500">{formatSize(doc.file_size)}</td>

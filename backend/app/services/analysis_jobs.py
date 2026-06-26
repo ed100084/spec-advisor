@@ -67,6 +67,7 @@ async def run_analysis_job(job_id: str):
             await db.commit()
 
             document_meta = {
+                "is_information_system": doc.is_information_system,
                 "security_responsibility_level": doc.security_responsibility_level,
                 "confidentiality_level": doc.confidentiality_level,
                 "integrity_level": doc.integrity_level,
@@ -74,6 +75,8 @@ async def run_analysis_job(job_id: str):
                 "legal_compliance_level": doc.legal_compliance_level,
                 "protection_level": doc.protection_level,
                 "system_importance": doc.system_importance,
+                "processes_personal_data": doc.processes_personal_data,
+                "personal_data_description": doc.personal_data_description,
             }
             result_text = await handler(
                 doc.content_text,

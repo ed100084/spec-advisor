@@ -15,6 +15,8 @@ export const uploadDocument = (file, department = '', project = '', securityMeta
   form.append('availability_level', securityMeta.availabilityLevel || '普')
   form.append('legal_compliance_level', securityMeta.legalComplianceLevel || '普')
   form.append('system_importance', securityMeta.systemImportance || '')
+  form.append('processes_personal_data', securityMeta.processesPersonalData || false)
+  form.append('personal_data_description', securityMeta.personalDataDescription || '')
   return api.post('/documents', form)
 }
 export const getDocuments = (params) => api.get('/documents', { params })
