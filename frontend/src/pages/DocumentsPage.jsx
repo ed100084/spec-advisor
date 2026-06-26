@@ -11,6 +11,7 @@ const fileIcons = {
 
 const securityResponsibilityLevels = ['A', 'B', 'C', 'D', 'E']
 const protectionLevels = ['普', '中', '高']
+const organizationCategories = ['特定非公務機關', '公務機關', '非特定非公務機關']
 const protectionRank = { 普: 0, 中: 1, 高: 2 }
 
 function deriveProtectionLevel(confidentiality, integrity, availability, legalCompliance) {
@@ -33,12 +34,15 @@ export default function DocumentsPage() {
   const [filterProj, setFilterProj] = useState('')
   const [uploadDept, setUploadDept] = useState('')
   const [uploadProj, setUploadProj] = useState('')
-  const [isInformationSystem, setIsInformationSystem] = useState(false)
+  const [isInformationSystem, setIsInformationSystem] = useState(true)
+  const [appliesSystemIntroductionGrading, setAppliesSystemIntroductionGrading] = useState(true)
+  const [isCriticalInfrastructure, setIsCriticalInfrastructure] = useState(true)
+  const [organizationCategory, setOrganizationCategory] = useState('特定非公務機關')
   const [securityResponsibilityLevel, setSecurityResponsibilityLevel] = useState('A')
-  const [confidentialityLevel, setConfidentialityLevel] = useState('普')
-  const [integrityLevel, setIntegrityLevel] = useState('普')
-  const [availabilityLevel, setAvailabilityLevel] = useState('普')
-  const [legalComplianceLevel, setLegalComplianceLevel] = useState('普')
+  const [confidentialityLevel, setConfidentialityLevel] = useState('中')
+  const [integrityLevel, setIntegrityLevel] = useState('中')
+  const [availabilityLevel, setAvailabilityLevel] = useState('中')
+  const [legalComplianceLevel, setLegalComplianceLevel] = useState('中')
   const [systemImportance, setSystemImportance] = useState('')
   const [processesPersonalData, setProcessesPersonalData] = useState(false)
   const [personalDataDescription, setPersonalDataDescription] = useState('')
@@ -71,6 +75,9 @@ export default function DocumentsPage() {
       for (const file of pendingFiles) {
         await uploadDocument(file, uploadDept, uploadProj, {
           isInformationSystem,
+          appliesSystemIntroductionGrading,
+          isCriticalInfrastructure,
+          organizationCategory,
           securityResponsibilityLevel,
           confidentialityLevel,
           integrityLevel,
@@ -188,17 +195,58 @@ export default function DocumentsPage() {
 
           <div className="border rounded-xl p-4 mb-4 bg-slate-50">
             <h4 className="font-semibold text-sm mb-2">資通訊系統導入分級</h4>
-            <label className="flex items-center gap-2 text-sm mb-3">
-              <input
-                type="checkbox"
-                checked={isInformationSystem}
-                onChange={(e) => setIsInformationSystem(e.target.checked)}
-                className="rounded"
-              />
-              這份規格書是資通訊系統導入案，需要依資通系統防護需求分級與防護基準檢視
-            </label>
             <div className="text-xs text-gray-600 bg-white border rounded-lg p-3 mb-3 leading-relaxed">
               <strong>資通系統定義：</strong>依《資通安全管理法》第3條第1款，係指「用以蒐集、控制、傳輸、儲存、流通、刪除資訊或對資訊為其他處理、使用或分享之系統。」
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+              <label className="bg-white border rounded-lg p-3 text-sm">
+                <span className="block text-xs font-medium text-gray-600 mb-2">是否是資通系統</span>
+                <select
+                  value={isInformationSystem ? 'yes' : 'no'}
+                  onChange={(e) => setIsInformationSystem(e.target.value === 'yes')}
+                  className="w-full border rounded-lg px-2 py-2 text-sm"
+                >
+                  <option value="yes">是</option>
+                  <option value="no">否</option>
+                </select>
+              </label>
+              <label className="bg-white border rounded-lg p-3 text-sm">
+                <span className="block text-xs font-medium text-gray-600 mb-2">是否套用資通系統導入分級</span>
+                <select
+                  value={appliesSystemIntroductionGrading ? 'yes' : 'no'}
+                  onChange={(e) => setAppliesSystemIntroductionGrading(e.target.value === 'yes')}
+                  className="w-full border rounded-lg px-2 py-2 text-sm"
+                >
+                  <option value="yes">是</option>
+                  <option value="no">否</option>
+                </select>
+              </label>
+              <label className="bg-white border rounded-lg p-3 text-sm">
+                <span className="block text-xs font-medium text-gray-600 mb-2">是否是關鍵基礎設施</span>
+                <select
+                  value={isCriticalInfrastructure ? 'yes' : 'no'}
+                  onChange={(e) => setIsCriticalInfrastructure(e.target.value === 'yes')}
+                  className="w-full border rounded-lg px-2 py-2 text-sm"
+                >
+                  <option value="yes">是</option>
+                  <option value="no">否</option>
+                </select>
+              </label>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">機關類型</label>
+                <select
+                  value={organizationCategory}
+                  onChange={(e) => setOrganizationCategory(e.target.value)}
+                  className="w-full border rounded-lg px-3 py-2 text-sm bg-white"
+                >
+                  {organizationCategories.map((category) => <option key={category} value={category}>{category}</option>)}
+                </select>
+              </div>
+              <div className="text-xs text-gray-600 bg-white border rounded-lg p-3 leading-relaxed">
+                特定非公務機關與關鍵基礎設施提供者，通常需依資通安全管理法與主管機關要求納入較完整之資安治理、通報、稽核與防護基準檢視。
+              </div>
             </div>
             {!isInformationSystem ? (
               <p className="text-xs text-gray-500">
@@ -209,7 +257,7 @@ export default function DocumentsPage() {
                 <p className="text-xs text-gray-500 mb-4">
                   先確認組織資安責任等級，再依機密性、完整性、可用性、法律遵循性四構面取最高者，推導資通系統防護需求等級。
                 </p>
-                <div className="grid grid-cols-5 gap-3 mb-3">
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-3 mb-3">
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">資安責任等級</label>
                 <select
@@ -371,7 +419,7 @@ export default function DocumentsPage() {
                             <td className="px-4 py-2 uppercase text-gray-500">{doc.file_type}</td>
                             <td className="px-4 py-2 text-gray-500">
                               <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
-                                {doc.is_information_system ? `責任${doc.security_responsibility_level || 'A'} / 防護${doc.protection_level || '普'}` : '非資通系統'}{doc.processes_personal_data ? ' / 個資' : ''}
+                                {doc.is_information_system ? `責任${doc.security_responsibility_level || 'A'} / 防護${doc.protection_level || '中'}` : '非資通系統'}{doc.is_critical_infrastructure ? ' / 關基' : ''}{doc.organization_category ? ` / ${doc.organization_category}` : ''}{doc.processes_personal_data ? ' / 個資' : ''}
                               </span>
                             </td>
                             <td className="px-4 py-2 text-gray-500">{formatSize(doc.file_size)}</td>

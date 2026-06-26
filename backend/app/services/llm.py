@@ -35,6 +35,9 @@ def format_security_profile(document_meta: dict | None = None) -> str:
     meta = document_meta or {}
     return f"""## 資通訊系統導入分級資訊
 - 是否為資通系統：{'是' if meta.get('is_information_system') else '否'}
+- 是否套用資通系統導入分級：{'是' if meta.get('applies_system_introduction_grading', True) else '否'}
+- 是否為關鍵基礎設施：{'是' if meta.get('is_critical_infrastructure') else '否'}
+- 機關類型：{meta.get('organization_category', '特定非公務機關')}
 - 組織資安責任等級：{meta.get('security_responsibility_level', 'A')}
 - 機密性防護需求：{meta.get('confidentiality_level', '普')}
 - 完整性防護需求：{meta.get('integrity_level', '普')}

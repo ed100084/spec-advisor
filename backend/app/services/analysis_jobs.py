@@ -71,6 +71,9 @@ async def run_analysis_job(job_id: str):
 
             document_meta = {
                 "is_information_system": doc.is_information_system,
+                "applies_system_introduction_grading": doc.applies_system_introduction_grading,
+                "is_critical_infrastructure": doc.is_critical_infrastructure,
+                "organization_category": doc.organization_category,
                 "security_responsibility_level": doc.security_responsibility_level,
                 "confidentiality_level": doc.confidentiality_level,
                 "integrity_level": doc.integrity_level,
