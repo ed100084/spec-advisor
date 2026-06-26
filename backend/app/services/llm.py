@@ -78,7 +78,7 @@ COMPARE_PROMPT = """請比較以下兩份規格書的差異：
 
 
 async def call_llm(prompt: str, system_prompt: str = SYSTEM_PROMPT) -> str:
-    async with httpx.AsyncClient(timeout=120.0) as client:
+    async with httpx.AsyncClient(timeout=300.0) as client:
         response = await client.post(
             f"{settings.llm_api_base_url}/chat/completions",
             headers={
