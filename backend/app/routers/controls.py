@@ -29,6 +29,16 @@ class ControlMeasureUpdate(BaseModel):
     sort_order: int | None = None
 
 
+class ControlMeasureCreate(BaseModel):
+    version_id: str
+    domain: str
+    item: str
+    level: str = "普"
+    requirement: str
+    source_text: str = ""
+    sort_order: int | None = None
+
+
 @router.post("/import")
 async def import_control_baseline(
     name: str = Form(...),
@@ -132,6 +142,26 @@ async def list_measures(
     return [measure_dict(m) for m in measures]
 
 
+@router.post("/measures")
+async def create_measure(req: ControlMeasureCreate, db: AsyncSession = Depends(get_db)):
+    version = await db.get(ControlBaselineVersion, req.version_id)
+    if not version:
+        raise HTTPException(404, "基準版本不存在")
+    measure = ControlMeasure(
+        version_id=req.version_id,
+        domain=req.domain.strip() or "未分類",
+        item=req.item.strip() or "未命名控制項",
+        level=normalize_level(req.level),
+        requirement=req.requirement.strip(),
+        source_text=req.source_text.strip(),
+        sort_order=req.sort_order if req.sort_order is not None else 9999,
+    )
+    db.add(measure)
+    await db.commit()
+    await db.refresh(measure)
+    return measure_dict(measure)
+
+
 @router.patch("/measures/{measure_id}")
 async def update_measure(measure_id: str, req: ControlMeasureUpdate, db: AsyncSession = Depends(get_db)):
     measure = await db.get(ControlMeasure, measure_id)
@@ -144,6 +174,16 @@ async def update_measure(measure_id: str, req: ControlMeasureUpdate, db: AsyncSe
     await db.commit()
     await db.refresh(measure)
     return measure_dict(measure)
+
+
+@router.delete("/measures/{measure_id}")
+async def delete_measure(measure_id: str, db: AsyncSession = Depends(get_db)):
+    measure = await db.get(ControlMeasure, measure_id)
+    if not measure:
+        raise HTTPException(404, "控制措施不存在")
+    await db.delete(measure)
+    await db.commit()
+    return {"message": "已刪除"}
 
 
 @router.delete("/versions/{version_id}")

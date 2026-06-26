@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Database, Trash2, Upload, RefreshCcw } from 'lucide-react'
-import { deleteControlVersion, getControlMeasures, getControlVersions, importControlBaseline } from '../api'
+import { Check, Database, Edit3, Plus, Trash2, Upload, RefreshCcw, X } from 'lucide-react'
+import { createControlMeasure, deleteControlMeasure, deleteControlVersion, getControlMeasures, getControlVersions, importControlBaseline, updateControlMeasure } from '../api'
 
 const levels = ['', '普', '中', '高']
 
@@ -10,6 +10,9 @@ export default function ControlsPage() {
   const [selectedVersion, setSelectedVersion] = useState('')
   const [selectedLevel, setSelectedLevel] = useState('')
   const [uploading, setUploading] = useState(false)
+  const [editingId, setEditingId] = useState('')
+  const [editForm, setEditForm] = useState({})
+  const [newMeasure, setNewMeasure] = useState({ domain: '', item: '', level: '普', requirement: '', source_text: '' })
 
   const loadVersions = async () => {
     const { data } = await getControlVersions()
@@ -51,6 +54,41 @@ export default function ControlsPage() {
     if (!confirm(`確定刪除「${version.name}」及其所有控制措施？`)) return
     await deleteControlVersion(version.id)
     setSelectedVersion('')
+    await loadVersions()
+    await loadMeasures()
+  }
+
+  const handleCreateMeasure = async (e) => {
+    e.preventDefault()
+    if (!selectedVersion) return alert('請先選擇要新增到哪個基準版本')
+    if (!newMeasure.requirement.trim()) return alert('請填寫要求')
+    await createControlMeasure({ ...newMeasure, version_id: selectedVersion })
+    setNewMeasure({ domain: '', item: '', level: '普', requirement: '', source_text: '' })
+    await loadVersions()
+    await loadMeasures()
+  }
+
+  const startEdit = (measure) => {
+    setEditingId(measure.id)
+    setEditForm({
+      domain: measure.domain,
+      item: measure.item,
+      level: measure.level,
+      requirement: measure.requirement,
+      source_text: measure.source_text || '',
+    })
+  }
+
+  const saveEdit = async (measureId) => {
+    await updateControlMeasure(measureId, editForm)
+    setEditingId('')
+    await loadVersions()
+    await loadMeasures()
+  }
+
+  const handleDeleteMeasure = async (measure) => {
+    if (!confirm(`確定刪除「${measure.domain} / ${measure.item} / ${measure.level}」？`)) return
+    await deleteControlMeasure(measure.id)
     await loadVersions()
     await loadMeasures()
   }
@@ -104,6 +142,17 @@ export default function ControlsPage() {
         </div>
       )}
 
+      <form onSubmit={handleCreateMeasure} className="bg-white rounded-xl shadow-sm p-4 mb-4 grid grid-cols-12 gap-3 items-start">
+        <div className="col-span-12 flex items-center gap-2 font-semibold text-sm"><Plus size={16} /> 新增控制措施</div>
+        <input value={newMeasure.domain} onChange={(e) => setNewMeasure({ ...newMeasure, domain: e.target.value })} placeholder="領域" className="col-span-2 border rounded-lg px-3 py-2 text-sm" />
+        <input value={newMeasure.item} onChange={(e) => setNewMeasure({ ...newMeasure, item: e.target.value })} placeholder="控制項" className="col-span-2 border rounded-lg px-3 py-2 text-sm" />
+        <select value={newMeasure.level} onChange={(e) => setNewMeasure({ ...newMeasure, level: e.target.value })} className="col-span-1 border rounded-lg px-3 py-2 text-sm">
+          {['普', '中', '高'].map((level) => <option key={level} value={level}>{level}</option>)}
+        </select>
+        <textarea value={newMeasure.requirement} onChange={(e) => setNewMeasure({ ...newMeasure, requirement: e.target.value })} placeholder="要求" className="col-span-5 border rounded-lg px-3 py-2 text-sm min-h-[42px]" required />
+        <button className="col-span-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700">新增</button>
+      </form>
+
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-left text-gray-500">
@@ -112,19 +161,43 @@ export default function ControlsPage() {
               <th className="px-4 py-3">控制項</th>
               <th className="px-4 py-3">等級</th>
               <th className="px-4 py-3">要求</th>
+              <th className="px-4 py-3 w-24">操作</th>
             </tr>
           </thead>
           <tbody className="divide-y">
             {measures.map((m) => (
               <tr key={m.id} className="hover:bg-gray-50">
-                <td className="px-4 py-3 whitespace-nowrap">{m.domain}</td>
-                <td className="px-4 py-3 whitespace-nowrap">{m.item}</td>
-                <td className="px-4 py-3"><span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-xs">{m.level}</span></td>
-                <td className="px-4 py-3 whitespace-pre-wrap">{m.requirement}</td>
+                {editingId === m.id ? (
+                  <>
+                    <td className="px-4 py-3"><input value={editForm.domain} onChange={(e) => setEditForm({ ...editForm, domain: e.target.value })} className="w-full border rounded px-2 py-1" /></td>
+                    <td className="px-4 py-3"><input value={editForm.item} onChange={(e) => setEditForm({ ...editForm, item: e.target.value })} className="w-full border rounded px-2 py-1" /></td>
+                    <td className="px-4 py-3"><select value={editForm.level} onChange={(e) => setEditForm({ ...editForm, level: e.target.value })} className="border rounded px-2 py-1">{['普', '中', '高'].map((level) => <option key={level} value={level}>{level}</option>)}</select></td>
+                    <td className="px-4 py-3"><textarea value={editForm.requirement} onChange={(e) => setEditForm({ ...editForm, requirement: e.target.value })} className="w-full border rounded px-2 py-1 min-h-[72px]" /></td>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-2">
+                        <button onClick={() => saveEdit(m.id)} className="text-emerald-600 hover:text-emerald-800" title="儲存"><Check size={16} /></button>
+                        <button onClick={() => setEditingId('')} className="text-gray-500 hover:text-gray-700" title="取消"><X size={16} /></button>
+                      </div>
+                    </td>
+                  </>
+                ) : (
+                  <>
+                    <td className="px-4 py-3 whitespace-nowrap">{m.domain}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">{m.item}</td>
+                    <td className="px-4 py-3"><span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-xs">{m.level}</span></td>
+                    <td className="px-4 py-3 whitespace-pre-wrap">{m.requirement}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-2">
+                        <button onClick={() => startEdit(m)} className="text-blue-600 hover:text-blue-800" title="編輯"><Edit3 size={16} /></button>
+                        <button onClick={() => handleDeleteMeasure(m)} className="text-red-500 hover:text-red-700" title="刪除"><Trash2 size={16} /></button>
+                      </div>
+                    </td>
+                  </>
+                )}
               </tr>
             ))}
             {measures.length === 0 && (
-              <tr><td colSpan={4} className="px-4 py-10 text-center text-gray-400">尚無控制措施資料</td></tr>
+              <tr><td colSpan={5} className="px-4 py-10 text-center text-gray-400">尚無控制措施資料</td></tr>
             )}
           </tbody>
         </table>

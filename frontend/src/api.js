@@ -71,7 +71,9 @@ export const deleteKnowledge = (id) => api.delete(`/knowledge/${id}`)
 export const importControlBaseline = (form) => api.post('/controls/import', form)
 export const getControlVersions = () => api.get('/controls/versions')
 export const getControlMeasures = (params) => api.get('/controls/measures', { params })
+export const createControlMeasure = (data) => api.post('/controls/measures', data)
 export const updateControlMeasure = (id, data) => api.patch(`/controls/measures/${id}`, data)
+export const deleteControlMeasure = (id) => api.delete(`/controls/measures/${id}`)
 export const deleteControlVersion = (id) => api.delete(`/controls/versions/${id}`)
 
 // Templates
