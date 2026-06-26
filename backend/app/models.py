@@ -22,6 +22,8 @@ class Document(Base):
     file_path: Mapped[str] = mapped_column(String(500))
     file_type: Mapped[str] = mapped_column(String(10))  # pdf, docx, xlsx
     file_size: Mapped[int] = mapped_column(Integer)
+    department: Mapped[str] = mapped_column(String(100), default="")
+    project: Mapped[str] = mapped_column(String(200), default="")
     content_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     uploaded_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 

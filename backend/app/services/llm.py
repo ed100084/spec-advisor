@@ -176,17 +176,25 @@ async def call_llm(prompt: str, system_prompt: str = SYSTEM_PROMPT) -> str:
         return data["choices"][0]["message"]["content"]
 
 
-async def get_knowledge_context() -> str:
-    """從資料庫取得所有啟用的知識庫內容，組成 context"""
+async def get_knowledge_context(knowledge_ids: list[str] | None = None) -> str:
+    """從資料庫取得知識庫內容。
+    knowledge_ids=None: 用全部啟用的
+    knowledge_ids=[]: 不用知識庫
+    knowledge_ids=[id1, id2]: 只用指定的
+    """
     from app.database import async_session
     from app.models import KnowledgeBase
 
+    if knowledge_ids is not None and len(knowledge_ids) == 0:
+        return "（未選擇知識庫，請依一般慣例進行審查）"
+
     async with async_session() as db:
-        result = await db.execute(
-            select(KnowledgeBase)
-            .where(KnowledgeBase.enabled == True)
-            .order_by(KnowledgeBase.category)
-        )
+        query = select(KnowledgeBase).order_by(KnowledgeBase.category)
+        if knowledge_ids is not None:
+            query = query.where(KnowledgeBase.id.in_(knowledge_ids))
+        else:
+            query = query.where(KnowledgeBase.enabled == True)
+        result = await db.execute(query)
         items = result.scalars().all()
 
     if not items:
@@ -194,7 +202,6 @@ async def get_knowledge_context() -> str:
 
     parts = []
     for item in items:
-        # 每個知識庫項目截取前 2000 字，避免 prompt 過長
         truncated = item.content[:2000]
         if len(item.content) > 2000:
             truncated += "\n...（以下省略）"
@@ -203,22 +210,22 @@ async def get_knowledge_context() -> str:
     return "\n\n".join(parts)
 
 
-async def analyze_binding(content: str) -> str:
-    kb = await get_knowledge_context()
+async def analyze_binding(content: str, knowledge_ids: list[str] | None = None) -> str:
+    kb = await get_knowledge_context(knowledge_ids)
     return await call_llm(BINDING_CHECK_PROMPT.format(
         knowledge_context=kb, content=content[:8000]
     ))
 
 
-async def analyze_reasonability(content: str) -> str:
-    kb = await get_knowledge_context()
+async def analyze_reasonability(content: str, knowledge_ids: list[str] | None = None) -> str:
+    kb = await get_knowledge_context(knowledge_ids)
     return await call_llm(REASONABILITY_PROMPT.format(
         knowledge_context=kb, content=content[:8000]
     ))
 
 
-async def analyze_full(content: str) -> str:
-    kb = await get_knowledge_context()
+async def analyze_full(content: str, knowledge_ids: list[str] | None = None) -> str:
+    kb = await get_knowledge_context(knowledge_ids)
     return await call_llm(FULL_ANALYSIS_PROMPT.format(
         knowledge_context=kb, content=content[:8000]
     ))

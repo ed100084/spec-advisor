@@ -10,18 +10,24 @@ from app.services.llm import analyze_binding, analyze_reasonability, analyze_ful
 router = APIRouter(prefix="/api/analysis", tags=["analysis"])
 
 
+class AnalysisRequest(BaseModel):
+    knowledge_ids: list[str] | None = None  # None = 用全部啟用的, [] = 不用知識庫
+
+
 class CompareRequest(BaseModel):
     doc_id_a: str
     doc_id_b: str
 
 
 @router.post("/{doc_id}/binding")
-async def check_binding(doc_id: str, db: AsyncSession = Depends(get_db)):
+async def check_binding(doc_id: str, req: AnalysisRequest = None, db: AsyncSession = Depends(get_db)):
+    if req is None:
+        req = AnalysisRequest()
     doc = await db.get(Document, doc_id)
     if not doc or not doc.content_text:
         raise HTTPException(404, "文件不存在或內容為空")
 
-    result_text = await analyze_binding(doc.content_text)
+    result_text = await analyze_binding(doc.content_text, knowledge_ids=req.knowledge_ids)
 
     analysis = Analysis(
         document_id=doc_id,
@@ -35,12 +41,14 @@ async def check_binding(doc_id: str, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/{doc_id}/reasonability")
-async def check_reasonability(doc_id: str, db: AsyncSession = Depends(get_db)):
+async def check_reasonability(doc_id: str, req: AnalysisRequest = None, db: AsyncSession = Depends(get_db)):
+    if req is None:
+        req = AnalysisRequest()
     doc = await db.get(Document, doc_id)
     if not doc or not doc.content_text:
         raise HTTPException(404, "文件不存在或內容為空")
 
-    result_text = await analyze_reasonability(doc.content_text)
+    result_text = await analyze_reasonability(doc.content_text, knowledge_ids=req.knowledge_ids)
 
     analysis = Analysis(
         document_id=doc_id,
@@ -54,12 +62,14 @@ async def check_reasonability(doc_id: str, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/{doc_id}/full")
-async def full_analysis(doc_id: str, db: AsyncSession = Depends(get_db)):
+async def full_analysis(doc_id: str, req: AnalysisRequest = None, db: AsyncSession = Depends(get_db)):
+    if req is None:
+        req = AnalysisRequest()
     doc = await db.get(Document, doc_id)
     if not doc or not doc.content_text:
         raise HTTPException(404, "文件不存在或內容為空")
 
-    result_text = await analyze_full(doc.content_text)
+    result_text = await analyze_full(doc.content_text, knowledge_ids=req.knowledge_ids)
 
     analysis = Analysis(
         document_id=doc_id,

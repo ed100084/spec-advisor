@@ -3,19 +3,25 @@ import axios from 'axios'
 const api = axios.create({ baseURL: '/api' })
 
 // Documents
-export const uploadDocument = (file) => {
+export const uploadDocument = (file, department = '', project = '') => {
   const form = new FormData()
   form.append('file', file)
+  form.append('department', department)
+  form.append('project', project)
   return api.post('/documents', form)
 }
-export const getDocuments = () => api.get('/documents')
+export const getDocuments = (params) => api.get('/documents', { params })
+export const getDocumentFilters = () => api.get('/documents/filters')
 export const getDocument = (id) => api.get(`/documents/${id}`)
 export const deleteDocument = (id) => api.delete(`/documents/${id}`)
 
 // Analysis
-export const analyzeBinding = (docId) => api.post(`/analysis/${docId}/binding`)
-export const analyzeReasonability = (docId) => api.post(`/analysis/${docId}/reasonability`)
-export const analyzeFull = (docId) => api.post(`/analysis/${docId}/full`)
+export const analyzeBinding = (docId, knowledgeIds) =>
+  api.post(`/analysis/${docId}/binding`, { knowledge_ids: knowledgeIds })
+export const analyzeReasonability = (docId, knowledgeIds) =>
+  api.post(`/analysis/${docId}/reasonability`, { knowledge_ids: knowledgeIds })
+export const analyzeFull = (docId, knowledgeIds) =>
+  api.post(`/analysis/${docId}/full`, { knowledge_ids: knowledgeIds })
 export const compareDocuments = (docIdA, docIdB) =>
   api.post('/analysis/compare', { doc_id_a: docIdA, doc_id_b: docIdB })
 export const getAnalysisHistory = (docId) => api.get(`/analysis/${docId}/history`)
