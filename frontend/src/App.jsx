@@ -22,6 +22,7 @@ export default function App() {
         <div className="p-4 border-b border-slate-700">
           <h1 className="text-lg font-bold">📋 Spec Advisor</h1>
           <p className="text-xs text-slate-400 mt-1">規格書檢視與建議系統</p>
+          <p className="text-xs text-slate-500 mt-0.5">v{__APP_VERSION__}</p>
         </div>
         <div className="flex-1 py-2">
           {navItems.map(({ to, icon: Icon, label }) => (
