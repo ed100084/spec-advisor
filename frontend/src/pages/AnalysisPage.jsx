@@ -3,7 +3,7 @@ import { Search, Shield, CheckCircle, Loader2, BookOpen, DollarSign, ShieldCheck
 import {
   getDocuments, analyzeBinding, analyzeReasonability, analyzeFull,
   analyzeCost, analyzeSecurity, analyzeImprovement,
-  getAnalysisHistory, getKnowledgeList, getAnalysisJob,
+  getAnalysisHistory, getKnowledgeList, getAnalysisJob, getActiveJobs,
 } from '../api'
 import MarkdownView from '../components/MarkdownView'
 
@@ -42,6 +42,7 @@ export default function AnalysisPage() {
   const [selectedKb, setSelectedKb] = useState({}) // { id: true/false }
   const [showKbPanel, setShowKbPanel] = useState(false)
   const [jobStatus, setJobStatus] = useState(null)
+  const [activeJobs, setActiveJobs] = useState([])
 
   useEffect(() => {
     getDocuments().then(({ data }) => setDocs(data))
@@ -52,7 +53,52 @@ export default function AnalysisPage() {
       data.filter((k) => k.enabled).forEach((k) => { sel[k.id] = true })
       setSelectedKb(sel)
     })
+    // Load active jobs on page entry
+    loadActiveJobs()
   }, [])
+
+  const loadActiveJobs = async () => {
+    try {
+      const { data } = await getActiveJobs()
+      setActiveJobs(data)
+      // Resume polling for each active job
+      data.forEach((job) => pollJob(job.job_id))
+    } catch (e) { /* ignore */ }
+  }
+
+  const pollJob = (jobId) => {
+    const poll = async () => {
+      try {
+        const { data: status } = await getAnalysisJob(jobId)
+        setJobStatus(status)
+        // Update activeJobs list
+        setActiveJobs((prev) => {
+          if (status.status === 'completed' || status.status === 'failed') {
+            return prev.filter((j) => j.job_id !== jobId)
+          }
+          return prev.map((j) => j.job_id === jobId ? status : j)
+        })
+        if (status.status === 'completed') {
+          setResult({
+            type: status.type_label,
+            content: status.result?.result || '',
+          })
+          setLoading(false)
+          if (selectedDoc) {
+            getAnalysisHistory(selectedDoc).then(({ data }) => setHistory(data))
+          }
+        } else if (status.status === 'failed') {
+          alert(`分析失敗: ${status.error || '未知錯誤'}`)
+          setLoading(false)
+        } else {
+          setTimeout(poll, 3000)
+        }
+      } catch (e) {
+        setTimeout(poll, 5000)
+      }
+    }
+    setTimeout(poll, 2000)
+  }
 
   useEffect(() => {
     if (selectedDoc) {
@@ -73,28 +119,8 @@ export default function AnalysisPage() {
     try {
       const kbIds = getSelectedKbIds()
       const { data: job } = await type.fn(selectedDoc, kbIds)
-      // Poll job status
-      const poll = async () => {
-        const { data: status } = await getAnalysisJob(job.job_id)
-        setJobStatus(status)
-        if (status.status === 'completed') {
-          setResult({
-            type: status.type_label || type.label,
-            content: status.result?.result || '',
-          })
-          setLoading(false)
-          // Refresh history
-          if (selectedDoc) {
-            getAnalysisHistory(selectedDoc).then(({ data }) => setHistory(data))
-          }
-        } else if (status.status === 'failed') {
-          alert(`分析失敗: ${status.error || '未知錯誤'}`)
-          setLoading(false)
-        } else {
-          setTimeout(poll, 3000)
-        }
-      }
-      setTimeout(poll, 2000)
+      setActiveJobs((prev) => [...prev, job])
+      pollJob(job.job_id)
     } catch (err) {
       alert(`分析啟動失敗: ${err.response?.data?.detail || err.message}`)
       setLoading(false)
@@ -191,6 +217,34 @@ export default function AnalysisPage() {
           </div>
         )}
       </div>
+
+      {/* Active Jobs */}
+      {activeJobs.length > 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+          <h3 className="text-sm font-semibold text-blue-800 mb-3 flex items-center gap-2">
+            <Loader2 size={14} className="animate-spin" />
+            進行中的分析任務（{activeJobs.length}）
+          </h3>
+          <div className="space-y-2">
+            {activeJobs.map((job) => (
+              <div key={job.job_id} className="flex items-center gap-3">
+                <span className="text-sm font-medium text-gray-700 min-w-[100px]">
+                  {job.type_label}
+                </span>
+                <div className="flex-1 bg-gray-200 rounded-full h-2 overflow-hidden">
+                  <div
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-500"
+                    style={{ width: `${job.progress}%` }}
+                  />
+                </div>
+                <span className="text-xs text-gray-500 min-w-[80px]">
+                  {job.status === 'pending' ? '排隊中' : job.message || '執行中'} {job.progress}%
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Analysis Buttons */}
       <div className="flex flex-wrap gap-3 mb-6">

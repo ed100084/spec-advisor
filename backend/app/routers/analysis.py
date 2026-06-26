@@ -123,6 +123,32 @@ async def get_job(job_id: str, db: AsyncSession = Depends(get_db)):
     }
 
 
+@router.get("/jobs")
+async def list_active_jobs(db: AsyncSession = Depends(get_db)):
+    """取得所有 pending/running 的分析任務"""
+    from sqlalchemy import select
+
+    result = await db.execute(
+        select(AnalysisJob)
+        .where(AnalysisJob.status.in_(["pending", "running"]))
+        .order_by(AnalysisJob.created_at.desc())
+    )
+    jobs = result.scalars().all()
+    return [
+        {
+            "job_id": j.id,
+            "document_id": j.document_id,
+            "type": j.analysis_type,
+            "type_label": ANALYSIS_LABELS.get(j.analysis_type, j.analysis_type),
+            "status": j.status,
+            "progress": j.progress,
+            "message": j.message,
+            "created_at": j.created_at.isoformat(),
+        }
+        for j in jobs
+    ]
+
+
 @router.get("/{doc_id}/history")
 async def get_analysis_history(doc_id: str, db: AsyncSession = Depends(get_db)):
     from sqlalchemy import select
