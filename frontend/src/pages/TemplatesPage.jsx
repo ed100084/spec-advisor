@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import ReactMarkdown from 'react-markdown'
 import { Wand2, Save, Loader2 } from 'lucide-react'
+import MarkdownView from '../components/MarkdownView'
 import { generateTemplate, saveTemplate, getTemplates, getTemplate } from '../api'
 
 const categories = ['IT設備', '軟體系統', '網路設備', '醫療設備', '工程營建', '辦公設備', '其他']
@@ -97,9 +97,7 @@ export default function TemplatesPage() {
                   <Save size={16} /> 儲存範本
                 </button>
               </div>
-              <div className="prose max-w-none">
-                <ReactMarkdown>{generated}</ReactMarkdown>
-              </div>
+              <MarkdownView>{generated}</MarkdownView>
             </div>
           )}
         </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import ReactMarkdown from 'react-markdown'
 import { GitCompare, Loader2 } from 'lucide-react'
+import MarkdownView from '../components/MarkdownView'
 import { getDocuments, compareDocuments } from '../api'
 
 export default function ComparePage() {
@@ -66,9 +66,7 @@ export default function ComparePage() {
             <span>vs</span>
             <span>B: {result.doc_b.filename}</span>
           </div>
-          <div className="prose max-w-none">
-            <ReactMarkdown>{result.result}</ReactMarkdown>
-          </div>
+          <MarkdownView>{result.result}</MarkdownView>
         </div>
       )}
     </div>

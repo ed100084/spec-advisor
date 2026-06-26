@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import ReactMarkdown from 'react-markdown'
 import { Search, Shield, CheckCircle, Loader2 } from 'lucide-react'
+import MarkdownView from '../components/MarkdownView'
 import { getDocuments, analyzeBinding, analyzeReasonability, analyzeFull, getAnalysisHistory } from '../api'
 
 const analysisTypes = [
@@ -85,9 +85,7 @@ export default function AnalysisPage() {
       {result && (
         <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
           <h3 className="text-lg font-semibold mb-4">{result.type} 結果</h3>
-          <div className="prose max-w-none">
-            <ReactMarkdown>{result.content}</ReactMarkdown>
-          </div>
+          <MarkdownView>{result.content}</MarkdownView>
         </div>
       )}
 

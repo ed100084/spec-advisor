@@ -26,6 +26,15 @@ export const getReviews = (docId) => api.get(`/reviews/document/${docId}`)
 export const updateReviewStatus = (reviewId, status) =>
   api.patch(`/reviews/${reviewId}`, { status })
 
+// Knowledge Base
+export const getKnowledgeList = () => api.get('/knowledge')
+export const getKnowledgeCategories = () => api.get('/knowledge/categories')
+export const getKnowledge = (id) => api.get(`/knowledge/${id}`)
+export const createKnowledge = (data) => api.post('/knowledge', data)
+export const uploadKnowledge = (form) => api.post('/knowledge/upload', form)
+export const updateKnowledge = (id, data) => api.patch(`/knowledge/${id}`, data)
+export const deleteKnowledge = (id) => api.delete(`/knowledge/${id}`)
+
 // Templates
 export const generateTemplate = (category, description) =>
   api.post('/templates/generate', { category, description })
