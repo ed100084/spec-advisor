@@ -1,0 +1,25 @@
+services:
+  backend:
+    build: ./backend
+    container_name: spec-advisor-backend
+    restart: unless-stopped
+    volumes:
+      - ./uploads:/app/uploads
+      - ./data:/app/data
+    environment:
+      - LLM_API_BASE_URL=${LLM_API_BASE_URL:-http://192.168.88.115:8317/v1}
+      - LLM_API_KEY=${LLM_API_KEY:-}
+      - LLM_MODEL=${LLM_MODEL:-qwen3.6-35b-a3b-mtp}
+      - DATABASE_URL=sqlite+aiosqlite:///./data/spec_advisor.db
+      - UPLOAD_DIR=./uploads
+    expose:
+      - "8000"
+
+  frontend:
+    build: ./frontend
+    container_name: spec-advisor-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
