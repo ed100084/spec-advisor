@@ -9,6 +9,15 @@ const fileIcons = {
   xls: FileSpreadsheet,
 }
 
+const securityResponsibilityLevels = ['A', 'B', 'C', 'D', 'E']
+const protectionLevels = ['普', '中', '高']
+const protectionRank = { 普: 0, 中: 1, 高: 2 }
+
+function deriveProtectionLevel(confidentiality, integrity, availability, legalCompliance) {
+  return [confidentiality, integrity, availability, legalCompliance]
+    .reduce((highest, current) => protectionRank[current] > protectionRank[highest] ? current : highest, '普')
+}
+
 function formatSize(bytes) {
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
@@ -24,6 +33,12 @@ export default function DocumentsPage() {
   const [filterProj, setFilterProj] = useState('')
   const [uploadDept, setUploadDept] = useState('')
   const [uploadProj, setUploadProj] = useState('')
+  const [securityResponsibilityLevel, setSecurityResponsibilityLevel] = useState('A')
+  const [confidentialityLevel, setConfidentialityLevel] = useState('普')
+  const [integrityLevel, setIntegrityLevel] = useState('普')
+  const [availabilityLevel, setAvailabilityLevel] = useState('普')
+  const [legalComplianceLevel, setLegalComplianceLevel] = useState('普')
+  const [systemImportance, setSystemImportance] = useState('')
   const [showUploadForm, setShowUploadForm] = useState(false)
   const [pendingFiles, setPendingFiles] = useState([])
 
@@ -51,7 +66,14 @@ export default function DocumentsPage() {
     setUploading(true)
     try {
       for (const file of pendingFiles) {
-        await uploadDocument(file, uploadDept, uploadProj)
+        await uploadDocument(file, uploadDept, uploadProj, {
+          securityResponsibilityLevel,
+          confidentialityLevel,
+          integrityLevel,
+          availabilityLevel,
+          legalComplianceLevel,
+          systemImportance,
+        })
       }
       setPendingFiles([])
       setShowUploadForm(false)
@@ -76,6 +98,13 @@ export default function DocumentsPage() {
     setDragOver(false)
     handleFilesSelected(e.dataTransfer.files)
   }
+
+  const derivedProtectionLevel = deriveProtectionLevel(
+    confidentialityLevel,
+    integrityLevel,
+    availabilityLevel,
+    legalComplianceLevel,
+  )
 
   // Group docs by department > project
   const grouped = {}
@@ -150,6 +179,60 @@ export default function DocumentsPage() {
               </datalist>
             </div>
           </div>
+
+          <div className="border rounded-xl p-4 mb-4 bg-slate-50">
+            <h4 className="font-semibold text-sm mb-2">資通訊系統導入分級</h4>
+            <p className="text-xs text-gray-500 mb-4">
+              先確認組織資安責任等級，再依機密性、完整性、可用性、法律遵循性四構面取最高者，推導資通系統防護需求等級。
+            </p>
+            <div className="grid grid-cols-5 gap-3 mb-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">資安責任等級</label>
+                <select
+                  value={securityResponsibilityLevel}
+                  onChange={(e) => setSecurityResponsibilityLevel(e.target.value)}
+                  className="w-full border rounded-lg px-2 py-2 text-sm"
+                >
+                  {securityResponsibilityLevels.map((level) => <option key={level} value={level}>{level}</option>)}
+                </select>
+              </div>
+              {[
+                ['機密性', confidentialityLevel, setConfidentialityLevel],
+                ['完整性', integrityLevel, setIntegrityLevel],
+                ['可用性', availabilityLevel, setAvailabilityLevel],
+                ['法律遵循性', legalComplianceLevel, setLegalComplianceLevel],
+              ].map(([label, value, setter]) => (
+                <div key={label}>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">{label}</label>
+                  <select
+                    value={value}
+                    onChange={(e) => setter(e.target.value)}
+                    className="w-full border rounded-lg px-2 py-2 text-sm"
+                  >
+                    {protectionLevels.map((level) => <option key={level} value={level}>{level}</option>)}
+                  </select>
+                </div>
+              ))}
+            </div>
+            <div className="grid grid-cols-3 gap-3 items-end">
+              <div className="bg-white border rounded-lg px-3 py-2">
+                <p className="text-xs text-gray-500">推導防護需求等級</p>
+                <p className={`text-lg font-bold ${derivedProtectionLevel === '高' ? 'text-red-600' : derivedProtectionLevel === '中' ? 'text-amber-600' : 'text-green-600'}`}>
+                  {derivedProtectionLevel}
+                </p>
+              </div>
+              <div className="col-span-2">
+                <label className="block text-xs font-medium text-gray-600 mb-1">系統重要性 / 判斷原因</label>
+                <input
+                  value={systemImportance}
+                  onChange={(e) => setSystemImportance(e.target.value)}
+                  placeholder="例如：此系統為核心醫療作業系統，可用性需達高等級"
+                  className="w-full border rounded-lg px-3 py-2 text-sm"
+                />
+              </div>
+            </div>
+          </div>
+
           <div className="flex gap-2">
             <button
               onClick={handleUploadConfirm}
@@ -217,6 +300,7 @@ export default function DocumentsPage() {
                       <tr>
                         <th className="px-4 py-2">檔案名稱</th>
                         <th className="px-4 py-2">格式</th>
+                        <th className="px-4 py-2">資安分級</th>
                         <th className="px-4 py-2">大小</th>
                         <th className="px-4 py-2">上傳時間</th>
                         <th className="px-4 py-2 w-12"></th>
@@ -232,6 +316,11 @@ export default function DocumentsPage() {
                               {doc.filename}
                             </td>
                             <td className="px-4 py-2 uppercase text-gray-500">{doc.file_type}</td>
+                            <td className="px-4 py-2 text-gray-500">
+                              <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
+                                責任{doc.security_responsibility_level || 'A'} / 防護{doc.protection_level || '普'}
+                              </span>
+                            </td>
                             <td className="px-4 py-2 text-gray-500">{formatSize(doc.file_size)}</td>
                             <td className="px-4 py-2 text-gray-500">
                               {new Date(doc.uploaded_at).toLocaleString('zh-TW')}

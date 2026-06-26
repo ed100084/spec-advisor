@@ -21,6 +21,12 @@ async def upload_document(
     file: UploadFile = File(...),
     department: str = Form(""),
     project: str = Form(""),
+    security_responsibility_level: str = Form("A"),
+    confidentiality_level: str = Form("普"),
+    integrity_level: str = Form("普"),
+    availability_level: str = Form("普"),
+    legal_compliance_level: str = Form("普"),
+    system_importance: str = Form(""),
     db: AsyncSession = Depends(get_db),
 ):
     suffix = Path(file.filename).suffix.lower()
@@ -36,6 +42,18 @@ async def upload_document(
         file_size=file.size or 0,
         department=department,
         project=project,
+        security_responsibility_level=security_responsibility_level,
+        confidentiality_level=confidentiality_level,
+        integrity_level=integrity_level,
+        availability_level=availability_level,
+        legal_compliance_level=legal_compliance_level,
+        protection_level=_derive_protection_level(
+            confidentiality_level,
+            integrity_level,
+            availability_level,
+            legal_compliance_level,
+        ),
+        system_importance=system_importance,
     )
     save_path = Path(settings.upload_dir) / f"{doc.id}{suffix}"
     doc.file_path = str(save_path)
@@ -115,6 +133,13 @@ def _doc_dict(doc: Document, preview: bool = False, include_content: bool = Fals
         "file_size": doc.file_size,
         "department": doc.department,
         "project": doc.project,
+        "security_responsibility_level": doc.security_responsibility_level,
+        "confidentiality_level": doc.confidentiality_level,
+        "integrity_level": doc.integrity_level,
+        "availability_level": doc.availability_level,
+        "legal_compliance_level": doc.legal_compliance_level,
+        "protection_level": doc.protection_level,
+        "system_importance": doc.system_importance,
         "uploaded_at": doc.uploaded_at.isoformat(),
     }
     if preview:
@@ -122,3 +147,9 @@ def _doc_dict(doc: Document, preview: bool = False, include_content: bool = Fals
     if include_content:
         d["content_text"] = doc.content_text
     return d
+
+
+def _derive_protection_level(*levels: str) -> str:
+    order = {"普": 0, "中": 1, "高": 2}
+    normalized = [level if level in order else "普" for level in levels]
+    return max(normalized, key=lambda level: order[level])

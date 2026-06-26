@@ -3,11 +3,17 @@ import axios from 'axios'
 const api = axios.create({ baseURL: '/api' })
 
 // Documents
-export const uploadDocument = (file, department = '', project = '') => {
+export const uploadDocument = (file, department = '', project = '', securityMeta = {}) => {
   const form = new FormData()
   form.append('file', file)
   form.append('department', department)
   form.append('project', project)
+  form.append('security_responsibility_level', securityMeta.securityResponsibilityLevel || 'A')
+  form.append('confidentiality_level', securityMeta.confidentialityLevel || '普')
+  form.append('integrity_level', securityMeta.integrityLevel || '普')
+  form.append('availability_level', securityMeta.availabilityLevel || '普')
+  form.append('legal_compliance_level', securityMeta.legalComplianceLevel || '普')
+  form.append('system_importance', securityMeta.systemImportance || '')
   return api.post('/documents', form)
 }
 export const getDocuments = (params) => api.get('/documents', { params })

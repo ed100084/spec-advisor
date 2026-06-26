@@ -30,6 +30,22 @@ STRUCTURED_OUTPUT_INSTRUCTIONS = """請只輸出以下 JSON 結構：
 }
 """
 
+
+def format_security_profile(document_meta: dict | None = None) -> str:
+    meta = document_meta or {}
+    return f"""## 資通訊系統導入分級資訊
+- 組織資安責任等級：{meta.get('security_responsibility_level', 'A')}
+- 機密性防護需求：{meta.get('confidentiality_level', '普')}
+- 完整性防護需求：{meta.get('integrity_level', '普')}
+- 可用性防護需求：{meta.get('availability_level', '普')}
+- 法律遵循性防護需求：{meta.get('legal_compliance_level', '普')}
+- 推導後資通系統防護需求等級：{meta.get('protection_level', '普')}
+- 系統重要性 / 判斷原因：{meta.get('system_importance', '未填寫')}
+
+判斷原則：資通系統之防護需求等級，以與該系統相關之機密性、完整性、可用性及法律遵循性構面中，任一構面之防護需求等級之最高者定之。
+控制措施套用原則：若防護需求等級為「高」，應檢視「高」之控制措施，且高等級要求含「中」之所有控制措施；「中」又含「普」之所有控制措施。若為「中」，應檢視「中」及「普」控制措施；若為「普」，檢視「普」控制措施。
+"""
+
 BINDING_CHECK_PROMPT = """請分析以下規格書內容，檢測是否有綁標或限制性條款。
 
 ## 審查依據
@@ -391,40 +407,41 @@ async def get_knowledge_context(
     return "\n\n".join(parts)
 
 
-async def analyze_binding(content: str, knowledge_ids: list[str] | None = None) -> str:
+async def analyze_binding(content: str, knowledge_ids: list[str] | None = None, document_meta: dict | None = None) -> str:
     kb = await get_knowledge_context(knowledge_ids, "binding_check")
     return await call_llm(BINDING_CHECK_PROMPT.format(
         knowledge_context=kb, content=content[:8000]
     ))
 
 
-async def analyze_reasonability(content: str, knowledge_ids: list[str] | None = None) -> str:
+async def analyze_reasonability(content: str, knowledge_ids: list[str] | None = None, document_meta: dict | None = None) -> str:
     kb = await get_knowledge_context(knowledge_ids, "reasonability")
     return await call_llm(REASONABILITY_PROMPT.format(
         knowledge_context=kb, content=content[:8000]
     ))
 
 
-async def analyze_full(content: str, knowledge_ids: list[str] | None = None) -> str:
+async def analyze_full(content: str, knowledge_ids: list[str] | None = None, document_meta: dict | None = None) -> str:
     kb = await get_knowledge_context(knowledge_ids, "full")
     return await call_llm(FULL_ANALYSIS_PROMPT.format(
         knowledge_context=kb, content=content[:8000]
     ))
 
 
-async def analyze_cost(content: str, knowledge_ids: list[str] | None = None) -> str:
+async def analyze_cost(content: str, knowledge_ids: list[str] | None = None, document_meta: dict | None = None) -> str:
     kb = await get_knowledge_context(knowledge_ids, "cost")
     return await call_llm(COST_ANALYSIS_PROMPT.format(
         knowledge_context=kb, content=content[:8000]
     ))
 
 
-async def analyze_security(content: str, knowledge_ids: list[str] | None = None) -> str:
+async def analyze_security(content: str, knowledge_ids: list[str] | None = None, document_meta: dict | None = None) -> str:
     kb = await get_knowledge_context(knowledge_ids, "security")
+    security_profile = format_security_profile(document_meta)
     sections = [
-        ("個資與資料治理", "個資保護、資料落地、資料保存、資料備份"),
-        ("存取控制與加密", "身分驗證、權限控管、傳輸加密、儲存加密"),
-        ("稽核與弱點管理", "稽核日誌、弱點掃描、修補時限、資安事件通報"),
+        ("個資與資料治理", "個資保護、資料落地、資料保存、資料備份，並依防護需求等級檢查對應控制措施"),
+        ("存取控制與加密", "帳號管理、最小權限、身分驗證、權限控管、傳輸加密、儲存加密，並向下包含較低等級控制措施"),
+        ("稽核與弱點管理", "稽核日誌、弱點掃描、修補時限、資安事件通報，並依防護需求等級檢查對應控制措施"),
     ]
     merged = {
         "summary": "資安合規分段分析彙整",
@@ -436,6 +453,8 @@ async def analyze_security(content: str, knowledge_ids: list[str] | None = None)
         prompt = f"""請針對「{section_name}」檢查規格書資安合規性。
 
 檢查範圍：{section_scope}
+
+{security_profile}
 
 ## 審查依據
 {kb}
@@ -457,7 +476,7 @@ async def analyze_security(content: str, knowledge_ids: list[str] | None = None)
     return structured_to_markdown(merged)
 
 
-async def analyze_improvement(content: str, knowledge_ids: list[str] | None = None) -> str:
+async def analyze_improvement(content: str, knowledge_ids: list[str] | None = None, document_meta: dict | None = None) -> str:
     kb = await get_knowledge_context(knowledge_ids, "improvement")
     return await call_llm(IMPROVEMENT_PROMPT.format(
         knowledge_context=kb, content=content[:8000]

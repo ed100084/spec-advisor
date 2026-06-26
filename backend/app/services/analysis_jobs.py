@@ -66,7 +66,20 @@ async def run_analysis_job(job_id: str):
             job.message = f"執行{ANALYSIS_LABELS.get(job.analysis_type, job.analysis_type)}"
             await db.commit()
 
-            result_text = await handler(doc.content_text, knowledge_ids=job.knowledge_ids)
+            document_meta = {
+                "security_responsibility_level": doc.security_responsibility_level,
+                "confidentiality_level": doc.confidentiality_level,
+                "integrity_level": doc.integrity_level,
+                "availability_level": doc.availability_level,
+                "legal_compliance_level": doc.legal_compliance_level,
+                "protection_level": doc.protection_level,
+                "system_importance": doc.system_importance,
+            }
+            result_text = await handler(
+                doc.content_text,
+                knowledge_ids=job.knowledge_ids,
+                document_meta=document_meta,
+            )
 
             analysis = Analysis(
                 document_id=job.document_id,

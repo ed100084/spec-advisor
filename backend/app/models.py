@@ -24,6 +24,13 @@ class Document(Base):
     file_size: Mapped[int] = mapped_column(Integer)
     department: Mapped[str] = mapped_column(String(100), default="")
     project: Mapped[str] = mapped_column(String(200), default="")
+    security_responsibility_level: Mapped[str] = mapped_column(String(1), default="A")
+    confidentiality_level: Mapped[str] = mapped_column(String(1), default="普")
+    integrity_level: Mapped[str] = mapped_column(String(1), default="普")
+    availability_level: Mapped[str] = mapped_column(String(1), default="普")
+    legal_compliance_level: Mapped[str] = mapped_column(String(1), default="普")
+    protection_level: Mapped[str] = mapped_column(String(1), default="普")
+    system_importance: Mapped[str] = mapped_column(String(255), default="")
     content_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     uploaded_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
