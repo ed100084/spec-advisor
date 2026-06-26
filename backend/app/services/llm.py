@@ -1,4 +1,7 @@
 """LLM 服務 - 透過 CLIProxyAPI 接各 LLM"""
+import json
+import re
+
 import httpx
 from sqlalchemy import select
 
@@ -7,6 +10,25 @@ from app.config import settings
 SYSTEM_PROMPT = """你是一位專業的採購規格書審查顧問。你的任務是分析規格書內容，依據相關法規與規章找出潛在問題並提供改善建議。
 請以繁體中文回覆，使用結構化的 Markdown 格式（標題、表格、清單）。
 重要：每項發現都必須引用具體的法規條文或規章依據，格式為【依據：○○○ 第○條】。"""
+
+JSON_SYSTEM_PROMPT = """你是一位專業的採購規格書審查顧問。請只輸出有效 JSON，不要使用 Markdown code fence，不要輸出 JSON 以外的文字。"""
+
+STRUCTURED_OUTPUT_INSTRUCTIONS = """請只輸出以下 JSON 結構：
+{
+    "summary": "整體摘要，繁體中文",
+    "overall_score": 0,
+    "findings": [
+        {
+            "item": "檢查項目",
+            "status": "符合/部分符合/缺漏/高風險/中風險/低風險/建議",
+            "evidence": "引用規格書中的具體內容或說明未提及",
+            "basis": "引用法規、院內規章或知識庫依據；沒有依據時填一般審查原則",
+            "suggestion": "具體改善建議"
+        }
+    ],
+    "recommendations": ["優先改善事項"]
+}
+"""
 
 BINDING_CHECK_PROMPT = """請分析以下規格書內容，檢測是否有綁標或限制性條款。
 
@@ -258,7 +280,85 @@ async def call_llm(prompt: str, system_prompt: str = SYSTEM_PROMPT) -> str:
         return data["choices"][0]["message"]["content"]
 
 
-async def get_knowledge_context(knowledge_ids: list[str] | None = None) -> str:
+async def call_llm_json(prompt: str) -> dict:
+    text = await call_llm(prompt, system_prompt=JSON_SYSTEM_PROMPT)
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        match = re.search(r"\{.*\}", text, re.S)
+        if match:
+            return json.loads(match.group(0))
+        raise ValueError("LLM 未回傳有效 JSON")
+
+
+def structured_to_markdown(data: dict) -> str:
+    findings = data.get("findings") or []
+    recommendations = data.get("recommendations") or []
+    lines = ["## 分析摘要", str(data.get("summary") or "")]
+    if data.get("overall_score") is not None:
+        lines.extend(["", f"**整體評分：{data.get('overall_score')}**"])
+    lines.extend([
+        "",
+        "## 分析結果",
+        "| 項目 | 狀態 | 規格書依據 | 審查依據 | 建議 |",
+        "|---|---|---|---|---|",
+    ])
+    for finding in findings:
+        lines.append(
+            "| {item} | {status} | {evidence} | {basis} | {suggestion} |".format(
+                item=str(finding.get("item") or "").replace("|", "｜"),
+                status=str(finding.get("status") or "").replace("|", "｜"),
+                evidence=str(finding.get("evidence") or "").replace("|", "｜").replace("\n", "<br>"),
+                basis=str(finding.get("basis") or "").replace("|", "｜").replace("\n", "<br>"),
+                suggestion=str(finding.get("suggestion") or "").replace("|", "｜").replace("\n", "<br>"),
+            )
+        )
+    if recommendations:
+        lines.extend(["", "## 優先改善事項"])
+        lines.extend(f"{index + 1}. {item}" for index, item in enumerate(recommendations))
+    return "\n".join(lines)
+
+
+def get_keywords_for_analysis(analysis_type: str) -> list[str]:
+    keywords = {
+        "binding_check": ["政府採購", "限制競爭", "綁標", "同等品", "廠牌", "資格", "規格"],
+        "reasonability": ["驗收", "規格", "合理", "功能", "需求", "履約", "標準"],
+        "cost": ["預算", "成本", "TCO", "維護", "授權", "耗材", "價格"],
+        "security": ["資安", "資通安全", "個資", "加密", "日誌", "稽核", "權限", "備份", "弱點"],
+        "improvement": ["政府採購", "限制競爭", "資安", "驗收", "履約", "規格"],
+        "full": ["政府採購", "限制競爭", "資安", "驗收", "履約", "成本", "規格"],
+    }
+    return keywords.get(analysis_type, keywords["full"])
+
+
+def extract_relevant_snippets(text: str, keywords: list[str], max_chars: int = 1800) -> str:
+    if not text:
+        return ""
+    paragraphs = [part.strip() for part in re.split(r"\n{2,}|(?<=。)", text) if part.strip()]
+    scored = []
+    for paragraph in paragraphs:
+        score = sum(1 for keyword in keywords if keyword.lower() in paragraph.lower())
+        if score:
+            scored.append((score, paragraph))
+    if not scored:
+        return text[:max_chars]
+    scored.sort(key=lambda item: item[0], reverse=True)
+    snippets = []
+    current_len = 0
+    for _, paragraph in scored:
+        if current_len + len(paragraph) > max_chars:
+            continue
+        snippets.append(paragraph)
+        current_len += len(paragraph)
+        if current_len >= max_chars:
+            break
+    return "\n".join(snippets) or text[:max_chars]
+
+
+async def get_knowledge_context(
+    knowledge_ids: list[str] | None = None,
+    analysis_type: str = "full",
+) -> str:
     """從資料庫取得知識庫內容。
     knowledge_ids=None: 用全部啟用的
     knowledge_ids=[]: 不用知識庫
@@ -282,53 +382,83 @@ async def get_knowledge_context(knowledge_ids: list[str] | None = None) -> str:
     if not items:
         return "（尚無知識庫資料，請依一般採購法規與慣例進行審查）"
 
+    keywords = get_keywords_for_analysis(analysis_type)
     parts = []
     for item in items:
-        truncated = item.content[:2000]
-        if len(item.content) > 2000:
-            truncated += "\n...（以下省略）"
-        parts.append(f"### 【{item.name}】（{item.source}）\n{truncated}")
+        snippet = extract_relevant_snippets(item.content, keywords)
+        parts.append(f"### 【{item.name}】（{item.source}）\n{snippet}")
 
     return "\n\n".join(parts)
 
 
 async def analyze_binding(content: str, knowledge_ids: list[str] | None = None) -> str:
-    kb = await get_knowledge_context(knowledge_ids)
+    kb = await get_knowledge_context(knowledge_ids, "binding_check")
     return await call_llm(BINDING_CHECK_PROMPT.format(
         knowledge_context=kb, content=content[:8000]
     ))
 
 
 async def analyze_reasonability(content: str, knowledge_ids: list[str] | None = None) -> str:
-    kb = await get_knowledge_context(knowledge_ids)
+    kb = await get_knowledge_context(knowledge_ids, "reasonability")
     return await call_llm(REASONABILITY_PROMPT.format(
         knowledge_context=kb, content=content[:8000]
     ))
 
 
 async def analyze_full(content: str, knowledge_ids: list[str] | None = None) -> str:
-    kb = await get_knowledge_context(knowledge_ids)
+    kb = await get_knowledge_context(knowledge_ids, "full")
     return await call_llm(FULL_ANALYSIS_PROMPT.format(
         knowledge_context=kb, content=content[:8000]
     ))
 
 
 async def analyze_cost(content: str, knowledge_ids: list[str] | None = None) -> str:
-    kb = await get_knowledge_context(knowledge_ids)
+    kb = await get_knowledge_context(knowledge_ids, "cost")
     return await call_llm(COST_ANALYSIS_PROMPT.format(
         knowledge_context=kb, content=content[:8000]
     ))
 
 
 async def analyze_security(content: str, knowledge_ids: list[str] | None = None) -> str:
-    kb = await get_knowledge_context(knowledge_ids)
-    return await call_llm(SECURITY_CHECK_PROMPT.format(
-        knowledge_context=kb, content=content[:8000]
-    ))
+    kb = await get_knowledge_context(knowledge_ids, "security")
+    sections = [
+        ("個資與資料治理", "個資保護、資料落地、資料保存、資料備份"),
+        ("存取控制與加密", "身分驗證、權限控管、傳輸加密、儲存加密"),
+        ("稽核與弱點管理", "稽核日誌、弱點掃描、修補時限、資安事件通報"),
+    ]
+    merged = {
+        "summary": "資安合規分段分析彙整",
+        "overall_score": None,
+        "findings": [],
+        "recommendations": [],
+    }
+    for section_name, section_scope in sections:
+        prompt = f"""請針對「{section_name}」檢查規格書資安合規性。
+
+檢查範圍：{section_scope}
+
+## 審查依據
+{kb}
+
+## 規格書內容
+{content[:6000]}
+
+{STRUCTURED_OUTPUT_INSTRUCTIONS}
+"""
+        data = await call_llm_json(prompt)
+        for finding in data.get("findings", []):
+            finding["item"] = f"{section_name} - {finding.get('item', '')}"
+            merged["findings"].append(finding)
+        merged["recommendations"].extend(data.get("recommendations", []))
+    if merged["findings"]:
+        missing = sum(1 for item in merged["findings"] if "缺" in str(item.get("status", "")) or "❌" in str(item.get("status", "")))
+        partial = sum(1 for item in merged["findings"] if "部分" in str(item.get("status", "")) or "⚠" in str(item.get("status", "")))
+        merged["overall_score"] = max(0, 100 - missing * 15 - partial * 8)
+    return structured_to_markdown(merged)
 
 
 async def analyze_improvement(content: str, knowledge_ids: list[str] | None = None) -> str:
-    kb = await get_knowledge_context(knowledge_ids)
+    kb = await get_knowledge_context(knowledge_ids, "improvement")
     return await call_llm(IMPROVEMENT_PROMPT.format(
         knowledge_context=kb, content=content[:8000]
     ))

@@ -3,7 +3,7 @@ import { Search, Shield, CheckCircle, Loader2, BookOpen, DollarSign, ShieldCheck
 import {
   getDocuments, analyzeBinding, analyzeReasonability, analyzeFull,
   analyzeCost, analyzeSecurity, analyzeImprovement,
-  getAnalysisHistory, getKnowledgeList,
+  getAnalysisHistory, getKnowledgeList, getAnalysisJob,
 } from '../api'
 import MarkdownView from '../components/MarkdownView'
 
@@ -41,6 +41,7 @@ export default function AnalysisPage() {
   const [knowledgeItems, setKnowledgeItems] = useState([])
   const [selectedKb, setSelectedKb] = useState({}) // { id: true/false }
   const [showKbPanel, setShowKbPanel] = useState(false)
+  const [jobStatus, setJobStatus] = useState(null)
 
   useEffect(() => {
     getDocuments().then(({ data }) => setDocs(data))
@@ -68,13 +69,34 @@ export default function AnalysisPage() {
     if (!selectedDoc) return alert('請先選擇文件')
     setLoading(true)
     setResult(null)
+    setJobStatus(null)
     try {
       const kbIds = getSelectedKbIds()
-      const { data } = await type.fn(selectedDoc, kbIds)
-      setResult({ type: type.label, content: data.result })
+      const { data: job } = await type.fn(selectedDoc, kbIds)
+      // Poll job status
+      const poll = async () => {
+        const { data: status } = await getAnalysisJob(job.job_id)
+        setJobStatus(status)
+        if (status.status === 'completed') {
+          setResult({
+            type: status.type_label || type.label,
+            content: status.result?.result || '',
+          })
+          setLoading(false)
+          // Refresh history
+          if (selectedDoc) {
+            getAnalysisHistory(selectedDoc).then(({ data }) => setHistory(data))
+          }
+        } else if (status.status === 'failed') {
+          alert(`分析失敗: ${status.error || '未知錯誤'}`)
+          setLoading(false)
+        } else {
+          setTimeout(poll, 3000)
+        }
+      }
+      setTimeout(poll, 2000)
     } catch (err) {
-      alert(`分析失敗: ${err.response?.data?.detail || err.message}`)
-    } finally {
+      alert(`分析啟動失敗: ${err.response?.data?.detail || err.message}`)
       setLoading(false)
     }
   }
@@ -194,6 +216,26 @@ export default function AnalysisPage() {
           )
         })}
       </div>
+
+      {/* Progress */}
+      {loading && jobStatus && (
+        <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+          <div className="flex items-center gap-3 mb-3">
+            <Loader2 size={18} className="animate-spin text-blue-600" />
+            <span className="text-sm font-medium">{jobStatus.message || '分析中...'}</span>
+            <span className="text-xs text-gray-400">{jobStatus.progress}%</span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div
+              className="bg-blue-600 h-2 rounded-full transition-all duration-500"
+              style={{ width: `${jobStatus.progress}%` }}
+            />
+          </div>
+          <p className="text-xs text-gray-400 mt-2">
+            分析類型：{jobStatus.type_label} · 狀態：{jobStatus.status === 'running' ? '執行中' : jobStatus.status === 'pending' ? '排隊中' : jobStatus.status}
+          </p>
+        </div>
+      )}
 
       {/* Result */}
       {result && (

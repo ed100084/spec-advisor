@@ -44,6 +44,22 @@ class Analysis(Base):
     document: Mapped["Document"] = relationship(back_populates="analyses")
 
 
+class AnalysisJob(Base):
+    __tablename__ = "analysis_jobs"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=gen_uuid)
+    document_id: Mapped[str] = mapped_column(String(36), ForeignKey("documents.id"))
+    analysis_type: Mapped[str] = mapped_column(String(50))
+    knowledge_ids: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    status: Mapped[str] = mapped_column(String(20), default="pending")  # pending, running, completed, failed
+    progress: Mapped[int] = mapped_column(Integer, default=0)
+    message: Mapped[str] = mapped_column(String(255), default="等待執行")
+    result: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
+
+
 class Review(Base):
     __tablename__ = "reviews"
 
