@@ -16,6 +16,15 @@ const analysisTypes = [
   { key: 'full', label: '完整分析', icon: Search, fn: analyzeFull, color: 'blue' },
 ]
 
+const typeLabels = {
+  binding_check: '綁標檢測',
+  reasonability: '合理性分析',
+  cost: '成本合理性',
+  security: '資安合規',
+  improvement: '改善建議',
+  full: '完整分析',
+}
+
 const categoryLabels = {
   law: '政府法規',
   internal_rule: '院內規章',
@@ -203,10 +212,10 @@ export default function AnalysisPage() {
               <div
                 key={h.id}
                 className="border rounded-lg p-3 cursor-pointer hover:bg-gray-50"
-                onClick={() => setResult({ type: h.type, content: h.result?.analysis || '' })}
+                onClick={() => setResult({ type: typeLabels[h.type] || h.type, content: h.result?.analysis || '' })}
               >
                 <div className="flex justify-between text-sm">
-                  <span className="font-medium">{h.type}</span>
+                  <span className="font-medium">{typeLabels[h.type] || h.type}</span>
                   <span className="text-gray-400">{new Date(h.created_at).toLocaleString('zh-TW')}</span>
                 </div>
               </div>
