@@ -31,7 +31,7 @@ export default function ComparePage() {
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-6">規格書比對</h2>
+      <h2 className="text-2xl font-bold mb-6">版本差異比對</h2>
 
       <div className="grid grid-cols-2 gap-4 mb-6">
         <div>
