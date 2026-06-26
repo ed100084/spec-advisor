@@ -34,6 +34,7 @@ async def import_control_baseline(
     name: str = Form(...),
     source: str = Form(""),
     effective_date: str = Form(""),
+    expected_count: int | None = Form(None),
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
 ):
@@ -64,7 +65,7 @@ async def import_control_baseline(
     db.add(version)
     await db.flush()
 
-    measures = await extract_control_measures(content)
+    measures = await extract_control_measures(content, expected_count=expected_count)
     for index, measure in enumerate(measures):
         db.add(ControlMeasure(
             version_id=version.id,
@@ -77,10 +78,15 @@ async def import_control_baseline(
         ))
 
     await db.commit()
+    warnings = []
+    if expected_count and len(measures) < expected_count:
+        warnings.append(f"預期 {expected_count} 項，但只匯入 {len(measures)} 項，請檢查 PDF 解析或補登缺漏項。")
     return {
         "version_id": version.id,
         "name": version.name,
         "imported_count": len(measures),
+        "expected_count": expected_count,
+        "warnings": warnings,
     }
 
 
@@ -175,7 +181,7 @@ def measure_dict(measure: ControlMeasure):
     }
 
 
-async def extract_control_measures(content: str) -> list[dict]:
+async def extract_control_measures(content: str, expected_count: int | None = None) -> list[dict]:
     chunks = split_content(content, max_chars=5500)
     all_measures = []
     for chunk in chunks:
@@ -198,7 +204,42 @@ async def extract_control_measures(content: str) -> list[dict]:
         measures = data.get("measures", [])
         if isinstance(measures, list):
             all_measures.extend(m for m in measures if isinstance(m, dict))
-    return dedupe_measures(all_measures)
+    measures = dedupe_measures(all_measures)
+    if expected_count and len(measures) < expected_count:
+        measures = await recover_missing_measures(content, measures, expected_count)
+    return measures
+
+
+async def recover_missing_measures(content: str, current_measures: list[dict], expected_count: int) -> list[dict]:
+    existing = "\n".join(
+        f"- {m.get('domain','')} / {m.get('item','')} / {m.get('level','')} / {m.get('requirement','')[:80]}"
+        for m in current_measures
+    )
+    prompt = f"""你正在校對資通系統防護基準控制措施匯入結果。
+
+預期控制措施數量：{expected_count}
+目前已萃取數量：{len(current_measures)}
+
+請重新檢查原文，找出「目前已萃取清單」沒有包含的控制措施。
+特別注意：
+1. 同一控制項在「普 / 中 / 高」不同等級應視為不同控制措施。
+2. 若文字提到「等級中之所有控制措施」或「等級普之所有控制措施」，不要把它當作唯一要求；仍須保留該等級自己的條列要求。
+3. 跨頁、跨行、表格換列的要求也要萃取。
+
+請只輸出：
+{{"measures":[{{"domain":"","item":"","level":"普","requirement":"","source_text":""}}]}}
+
+目前已萃取清單：
+{existing[:12000]}
+
+原文：
+{content[:20000]}
+"""
+    data = await call_llm_json(prompt)
+    missing = data.get("measures", [])
+    if isinstance(missing, list):
+        return dedupe_measures(current_measures + [m for m in missing if isinstance(m, dict)])
+    return current_measures
 
 
 def split_content(content: str, max_chars: int = 5500) -> list[str]:

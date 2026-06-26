@@ -35,7 +35,8 @@ export default function ControlsPage() {
     try {
       const form = new FormData(formEl)
       const { data } = await importControlBaseline(form)
-      alert(`匯入完成，共 ${data.imported_count} 項控制措施`)
+      const warnings = data.warnings?.length ? `\n\n提醒：\n${data.warnings.join('\n')}` : ''
+      alert(`匯入完成，共 ${data.imported_count} 項控制措施${warnings}`)
       formEl.reset()
       await loadVersions()
       setSelectedVersion(data.version_id)
@@ -63,12 +64,13 @@ export default function ControlsPage() {
         <p className="text-sm text-gray-500 mb-4">
           上傳 PDF/Word/Excel/TXT，系統會先解析文字，再由 AI 萃取成「控制領域 / 控制項 / 等級 / 要求」資料表。未來法規更新時可匯入新版本並保留舊版本。
         </p>
-        <form onSubmit={handleUpload} className="grid grid-cols-4 gap-3 items-end">
+        <form onSubmit={handleUpload} className="grid grid-cols-5 gap-3 items-end">
           <input name="name" placeholder="版本名稱（如：防護基準 113版）" className="border rounded-lg px-3 py-2" required />
           <input name="source" placeholder="來源（如：數位發展部）" className="border rounded-lg px-3 py-2" />
           <input name="effective_date" placeholder="生效日期" className="border rounded-lg px-3 py-2" />
+          <input name="expected_count" type="number" min="1" placeholder="預期項數（如：81）" className="border rounded-lg px-3 py-2" />
           <input name="file" type="file" accept=".pdf,.docx,.xlsx,.xls,.txt" className="text-sm" required />
-          <button disabled={uploading} className="col-span-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
+          <button disabled={uploading} className="col-span-5 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
             {uploading ? '匯入中，請稍候...' : '開始匯入'}
           </button>
         </form>
