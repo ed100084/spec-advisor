@@ -11,7 +11,7 @@ const fileIcons = {
 
 const securityResponsibilityLevels = ['A', 'B', 'C', 'D', 'E']
 const protectionLevels = ['普', '中', '高']
-const organizationCategories = ['特定非公務機關', '公務機關', '非特定非公務機關']
+const organizationCategories = ['特定非公務機關', '公務機關']
 const protectionRank = { 普: 0, 中: 1, 高: 2 }
 
 function deriveProtectionLevel(confidentiality, integrity, availability, legalCompliance) {

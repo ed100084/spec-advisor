@@ -21,7 +21,7 @@ async def upload_document(
     file: UploadFile = File(...),
     department: str = Form(""),
     project: str = Form(""),
-    is_information_system: bool = Form(False),
+    is_information_system: bool = Form(True),
     applies_system_introduction_grading: bool = Form(True),
     is_critical_infrastructure: bool = Form(True),
     organization_category: str = Form("特定非公務機關"),
