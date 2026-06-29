@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime
 from sqlalchemy import String, Text, DateTime, Integer, Float, ForeignKey, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -7,7 +7,7 @@ from app.database import Base
 
 
 def utcnow():
-    return datetime.now(timezone.utc)
+    return datetime.now()
 
 
 def gen_uuid():
@@ -130,6 +130,19 @@ class KnowledgeBase(Base):
     enabled: Mapped[bool] = mapped_column(default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
+
+
+
+
+class KnowledgeChunk(Base):
+    __tablename__ = "knowledge_chunks"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=gen_uuid)
+    knowledge_id: Mapped[str] = mapped_column(String(36), ForeignKey("knowledge_base.id"))
+    chunk_text: Mapped[str] = mapped_column(Text)
+    chunk_index: Mapped[int] = mapped_column(Integer, default=0)
+    embedding: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
 
 class ControlBaselineVersion(Base):

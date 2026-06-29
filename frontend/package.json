@@ -1,7 +1,7 @@
 {
   "name": "spec-advisor-frontend",
   "private": true,
-  "version": "1.8.12",
+  "version": "1.9.3",
   "type": "module",
   "scripts": {
     "dev": "vite",

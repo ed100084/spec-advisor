@@ -16,14 +16,13 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Spec Advisor API",
     description="規格書檢視與建議系統",
-    version="1.0.0",
+    version="1.9.3",
     lifespan=lifespan,
 )
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )

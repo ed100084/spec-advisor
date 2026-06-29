@@ -1,5 +1,6 @@
 """知識庫管理 API - 法規、院內規章、產業標準"""
 import asyncio
+import logging
 import shutil
 import uuid
 from pathlib import Path
@@ -11,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.database import get_db
-from app.models import KnowledgeBase
+from app.models import KnowledgeBase, KnowledgeChunk
 from app.services.parser import parse_file
 
 router = APIRouter(prefix="/api/knowledge", tags=["knowledge"])
@@ -39,6 +40,37 @@ class KnowledgeUpdate(BaseModel):
     enabled: bool | None = None
 
 
+
+async def rebuild_chunks_for_knowledge(kb_id: str, content: str, db: AsyncSession):
+    """Delete old chunks and create new ones with embeddings."""
+    from app.services.embedding import chunk_text, compute_embeddings
+
+    # Delete existing chunks
+    old = await db.execute(select(KnowledgeChunk).where(KnowledgeChunk.knowledge_id == kb_id))
+    for chunk in old.scalars().all():
+        await db.delete(chunk)
+
+    if not content or not content.strip():
+        return 0
+
+    # Create new chunks
+    chunks = chunk_text(content)
+    if not chunks:
+        return 0
+
+    # Compute embeddings in batch
+    embeddings = compute_embeddings(chunks)
+
+    for i, (text, emb) in enumerate(zip(chunks, embeddings)):
+        db.add(KnowledgeChunk(
+            knowledge_id=kb_id,
+            chunk_text=text,
+            chunk_index=i,
+            embedding=emb,
+        ))
+
+    return len(chunks)
+
 @router.post("")
 async def create_knowledge(req: KnowledgeCreate, db: AsyncSession = Depends(get_db)):
     kb = KnowledgeBase(
@@ -50,6 +82,12 @@ async def create_knowledge(req: KnowledgeCreate, db: AsyncSession = Depends(get_
     db.add(kb)
     await commit_with_retry(db)
     await db.refresh(kb)
+    # Build chunks and embeddings in background
+    try:
+        n = await rebuild_chunks_for_knowledge(kb.id, kb.content, db)
+        await db.commit()
+    except Exception as e:
+        logging.getLogger(__name__).warning("Embedding failed for chunk, skipping: %s", e)
     return _to_dict(kb)
 
 
@@ -90,6 +128,11 @@ async def upload_knowledge(
     db.add(kb)
     await commit_with_retry(db)
     await db.refresh(kb)
+    try:
+        n = await rebuild_chunks_for_knowledge(kb.id, kb.content, db)
+        await db.commit()
+    except Exception as e:
+        logging.getLogger(__name__).warning("Embedding failed for chunk, skipping: %s", e)
     return _to_dict(kb)
 
 
@@ -119,11 +162,20 @@ async def update_knowledge(kb_id: str, req: KnowledgeUpdate, db: AsyncSession = 
     if not kb:
         raise HTTPException(404, "知識庫項目不存在")
 
+    content_changed = req.content is not None
     for field, value in req.model_dump(exclude_none=True).items():
         setattr(kb, field, value)
 
     await db.commit()
     await db.refresh(kb)
+
+    if content_changed:
+        try:
+            await rebuild_chunks_for_knowledge(kb.id, kb.content, db)
+            await db.commit()
+        except Exception as e:
+            logging.getLogger(__name__).warning("Embedding failed for chunk, skipping: %s", e)
+
     return _to_dict(kb)
 
 
@@ -132,10 +184,25 @@ async def delete_knowledge(kb_id: str, db: AsyncSession = Depends(get_db)):
     kb = await db.get(KnowledgeBase, kb_id)
     if not kb:
         raise HTTPException(404, "知識庫項目不存在")
+    old_chunks = await db.execute(select(KnowledgeChunk).where(KnowledgeChunk.knowledge_id == kb_id))
+    for chunk in old_chunks.scalars().all():
+        await db.delete(chunk)
     await db.delete(kb)
     await db.commit()
     return {"message": "已刪除"}
 
+
+
+@router.post("/re-embed")
+async def re_embed_all(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(KnowledgeBase))
+    items = result.scalars().all()
+    total_chunks = 0
+    for kb in items:
+        n = await rebuild_chunks_for_knowledge(kb.id, kb.content, db)
+        total_chunks += n
+    await db.commit()
+    return {"message": f"已重建 {len(items)} 個知識庫，共 {total_chunks} 個 chunks"}
 
 def _to_dict(kb: KnowledgeBase, include_content: bool = False):
     d = {

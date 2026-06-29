@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
-import { Search, Shield, CheckCircle, Loader2, BookOpen, DollarSign, ShieldCheck, FileEdit, KeyRound } from 'lucide-react'
+import { Search, Shield, CheckCircle, Loader2, BookOpen, DollarSign, ShieldCheck, FileEdit, KeyRound, UserCheck, Clock, Unlink, Network, HardDrive } from 'lucide-react'
 import {
   getDocuments, analyzeBinding, analyzeReasonability, analyzeFull,
   analyzeCost, analyzeSecurity, analyzeIntellectualProperty, analyzeImprovement,
+  analyzePia, analyzeSla, analyzeVendorLockin,
+  analyzeInteroperability, analyzeIsms, analyzeBcpDr,
   getAnalysisHistory, getKnowledgeList, getAnalysisJob, getActiveJobs,
 } from '../api'
 import MarkdownView from '../components/MarkdownView'
@@ -13,8 +15,24 @@ const analysisTypes = [
   { key: 'cost', label: '成本合理性', icon: DollarSign, fn: analyzeCost, color: 'green' },
   { key: 'security', label: '資安合規', icon: ShieldCheck, fn: analyzeSecurity, color: 'purple' },
   { key: 'intellectual_property', label: '智財授權檢視', icon: KeyRound, fn: analyzeIntellectualProperty, color: 'indigo' },
+  { key: 'pia', label: '個資保護影響評估', icon: UserCheck, fn: analyzePia, color: 'orange' },
+  { key: 'sla', label: '服務水準分析', icon: Clock, fn: analyzeSla, color: 'cyan' },
+  { key: 'vendor_lockin', label: '供應商鎖定風險', icon: Unlink, fn: analyzeVendorLockin, color: 'amber' },
   { key: 'improvement', label: '改善建議', icon: FileEdit, fn: analyzeImprovement, color: 'teal' },
+  { key: 'interoperability', label: '醫療互通性檢查', icon: Network, fn: analyzeInteroperability, color: 'teal2' },
+  { key: 'isms', label: 'ISMS 合規檢查', icon: ShieldCheck, fn: analyzeIsms, color: 'indigo2' },
+  { key: 'bcp_dr', label: '營運持續/災難復原', icon: HardDrive, fn: analyzeBcpDr, color: 'rose' },
   { key: 'full', label: '完整分析', icon: Search, fn: analyzeFull, color: 'blue' },
+]
+
+const analysisTypeMap = Object.fromEntries(analysisTypes.map((t) => [t.key, t]))
+
+const analysisGroups = [
+  { label: '📋 基礎審查', keys: ['full', 'binding', 'reasonability'] },
+  { label: '🔒 法規合規', keys: ['security', 'pia', 'intellectual_property', 'isms'] },
+  { label: '💰 商務風險', keys: ['cost', 'sla', 'vendor_lockin', 'bcp_dr'] },
+  { label: '🏥 醫療專業', keys: ['interoperability'] },
+  { label: '📝 產出', keys: ['improvement'] },
 ]
 
 const typeLabels = {
@@ -23,7 +41,13 @@ const typeLabels = {
   cost: '成本合理性',
   security: '資安合規',
   intellectual_property: '智財授權檢視',
+  pia: '個資保護影響評估',
+  sla: '服務水準分析',
+  vendor_lockin: '供應商鎖定風險',
   improvement: '改善建議',
+  interoperability: '醫療互通性檢查',
+  isms: 'ISMS 合規檢查',
+  bcp_dr: '營運持續/災難復原',
   full: '完整分析',
 }
 
@@ -249,29 +273,44 @@ export default function AnalysisPage() {
       )}
 
       {/* Analysis Buttons */}
-      <div className="flex flex-wrap gap-3 mb-6">
-        {analysisTypes.map((type) => {
-          const Icon = type.icon
-          return (
-            <button
-              key={type.key}
-              onClick={() => runAnalysis(type)}
-              disabled={loading || !selectedDoc}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-white transition-colors disabled:opacity-50 ${
-                type.color === 'red' ? 'bg-red-600 hover:bg-red-700' :
-                type.color === 'yellow' ? 'bg-amber-600 hover:bg-amber-700' :
-                type.color === 'green' ? 'bg-emerald-600 hover:bg-emerald-700' :
-                type.color === 'purple' ? 'bg-purple-600 hover:bg-purple-700' :
-                type.color === 'indigo' ? 'bg-indigo-600 hover:bg-indigo-700' :
-                type.color === 'teal' ? 'bg-teal-600 hover:bg-teal-700' :
-                'bg-blue-600 hover:bg-blue-700'
-              }`}
-            >
-              {loading ? <Loader2 size={16} className="animate-spin" /> : <Icon size={16} />}
-              {type.label}
-            </button>
-          )
-        })}
+      <div className="mb-6">
+        {analysisGroups.map((group) => (
+          <div key={group.label}>
+            <p className="text-sm font-semibold text-gray-500 mb-2 mt-4">{group.label}</p>
+            <div className="flex flex-wrap gap-3">
+              {group.keys.map((key) => {
+                const type = analysisTypeMap[key]
+                if (!type) return null
+                const Icon = type.icon
+                return (
+                  <button
+                    key={type.key}
+                    onClick={() => runAnalysis(type)}
+                    disabled={loading || !selectedDoc}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-white transition-colors disabled:opacity-50 ${
+                      type.color === 'red' ? 'bg-red-600 hover:bg-red-700' :
+                      type.color === 'yellow' ? 'bg-amber-600 hover:bg-amber-700' :
+                      type.color === 'green' ? 'bg-emerald-600 hover:bg-emerald-700' :
+                      type.color === 'purple' ? 'bg-purple-600 hover:bg-purple-700' :
+                      type.color === 'indigo' ? 'bg-indigo-600 hover:bg-indigo-700' :
+                      type.color === 'orange' ? 'bg-orange-600 hover:bg-orange-700' :
+                      type.color === 'cyan' ? 'bg-cyan-600 hover:bg-cyan-700' :
+                      type.color === 'amber' ? 'bg-amber-500 hover:bg-amber-600' :
+                      type.color === 'teal' ? 'bg-teal-600 hover:bg-teal-700' :
+                      type.color === 'teal2' ? 'bg-teal-500 hover:bg-teal-600' :
+                      type.color === 'indigo2' ? 'bg-indigo-500 hover:bg-indigo-600' :
+                      type.color === 'rose' ? 'bg-rose-600 hover:bg-rose-700' :
+                      'bg-blue-600 hover:bg-blue-700'
+                    }`}
+                  >
+                    {loading ? <Loader2 size={16} className="animate-spin" /> : <Icon size={16} />}
+                    {type.label}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Progress */}

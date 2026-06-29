@@ -42,6 +42,18 @@ export const analyzeIntellectualProperty = (docId, knowledgeIds) =>
   api.post(`/analysis/${docId}/intellectual-property`, { knowledge_ids: knowledgeIds })
 export const analyzeImprovement = (docId, knowledgeIds) =>
   api.post(`/analysis/${docId}/improvement`, { knowledge_ids: knowledgeIds })
+export const analyzePia = (docId, knowledgeIds) =>
+  api.post(`/analysis/${docId}/pia`, { knowledge_ids: knowledgeIds })
+export const analyzeSla = (docId, knowledgeIds) =>
+  api.post(`/analysis/${docId}/sla`, { knowledge_ids: knowledgeIds })
+export const analyzeVendorLockin = (docId, knowledgeIds) =>
+  api.post(`/analysis/${docId}/vendor-lockin`, { knowledge_ids: knowledgeIds })
+export const analyzeInteroperability = (docId, knowledgeIds) =>
+  api.post(`/analysis/${docId}/interoperability`, { knowledge_ids: knowledgeIds })
+export const analyzeIsms = (docId, knowledgeIds) =>
+  api.post(`/analysis/${docId}/isms`, { knowledge_ids: knowledgeIds })
+export const analyzeBcpDr = (docId, knowledgeIds) =>
+  api.post(`/analysis/${docId}/bcp-dr`, { knowledge_ids: knowledgeIds })
 export const getAnalysisJob = (jobId) => api.get(`/analysis/jobs/${jobId}`)
 export const getActiveJobs = () => api.get('/analysis/jobs')
 export const compareDocuments = (docIdA, docIdB) =>

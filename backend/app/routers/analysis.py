@@ -89,6 +89,36 @@ async def check_improvement(doc_id: str, req: AnalysisRequest = None, db: AsyncS
     return await create_analysis_job(doc_id, "improvement", req, db)
 
 
+@router.post("/{doc_id}/pia")
+async def check_pia(doc_id: str, req: AnalysisRequest = None, db: AsyncSession = Depends(get_db)):
+    return await create_analysis_job(doc_id, "pia", req, db)
+
+
+@router.post("/{doc_id}/sla")
+async def check_sla(doc_id: str, req: AnalysisRequest = None, db: AsyncSession = Depends(get_db)):
+    return await create_analysis_job(doc_id, "sla", req, db)
+
+
+@router.post("/{doc_id}/vendor-lockin")
+async def check_vendor_lockin(doc_id: str, req: AnalysisRequest = None, db: AsyncSession = Depends(get_db)):
+    return await create_analysis_job(doc_id, "vendor_lockin", req, db)
+
+
+@router.post("/{doc_id}/interoperability")
+async def check_interoperability(doc_id: str, req: AnalysisRequest = None, db: AsyncSession = Depends(get_db)):
+    return await create_analysis_job(doc_id, "interoperability", req, db)
+
+
+@router.post("/{doc_id}/isms")
+async def check_isms(doc_id: str, req: AnalysisRequest = None, db: AsyncSession = Depends(get_db)):
+    return await create_analysis_job(doc_id, "isms", req, db)
+
+
+@router.post("/{doc_id}/bcp-dr")
+async def check_bcp_dr(doc_id: str, req: AnalysisRequest = None, db: AsyncSession = Depends(get_db)):
+    return await create_analysis_job(doc_id, "bcp_dr", req, db)
+
+
 @router.post("/compare")
 async def compare(req: CompareRequest, db: AsyncSession = Depends(get_db)):
     doc_a = await db.get(Document, req.doc_id_a)

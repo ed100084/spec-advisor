@@ -11,6 +11,12 @@ from app.services.llm import (
     analyze_security,
     analyze_intellectual_property,
     analyze_improvement,
+    analyze_pia,
+    analyze_sla,
+    analyze_vendor_lockin,
+    analyze_interoperability,
+    analyze_isms,
+    analyze_bcp_dr,
 )
 
 ANALYSIS_HANDLERS = {
@@ -20,6 +26,12 @@ ANALYSIS_HANDLERS = {
     "security": analyze_security,
     "intellectual_property": analyze_intellectual_property,
     "improvement": analyze_improvement,
+    "pia": analyze_pia,
+    "sla": analyze_sla,
+    "vendor_lockin": analyze_vendor_lockin,
+    "interoperability": analyze_interoperability,
+    "isms": analyze_isms,
+    "bcp_dr": analyze_bcp_dr,
     "full": analyze_full,
 }
 
@@ -30,6 +42,12 @@ ANALYSIS_LABELS = {
     "security": "資安合規",
     "intellectual_property": "智財授權檢視",
     "improvement": "改善建議",
+    "pia": "個資保護影響評估",
+    "sla": "服務水準分析",
+    "vendor_lockin": "供應商鎖定風險",
+    "interoperability": "醫療互通性檢查",
+    "isms": "ISMS 合規檢查",
+    "bcp_dr": "營運持續/災難復原",
     "full": "完整分析",
 }
 
