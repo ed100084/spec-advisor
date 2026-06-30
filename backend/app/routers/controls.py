@@ -49,7 +49,7 @@ async def import_control_baseline(
     db: AsyncSession = Depends(get_db),
 ):
     suffix = Path(file.filename).suffix.lower()
-    if suffix not in {".pdf", ".docx", ".xlsx", ".xls", ".txt"}:
+    if suffix not in {".pdf", ".docx", ".xlsx", ".xls", ".md", ".markdown", ".txt"}:
         raise HTTPException(400, f"不支援的檔案格式: {suffix}")
 
     temp_path = Path(settings.upload_dir) / f"controls_import{suffix}"
@@ -57,10 +57,7 @@ async def import_control_baseline(
         shutil.copyfileobj(file.file, f)
 
     try:
-        if suffix == ".txt":
-            content = temp_path.read_text(encoding="utf-8")
-        else:
-            content = parse_file(str(temp_path))
+        content = parse_file(str(temp_path))
     except Exception as exc:
         raise HTTPException(500, f"檔案解析失敗: {exc}")
     finally:

@@ -152,7 +152,7 @@ export default function KnowledgePage() {
             </select>
             <input name="source" placeholder="來源說明" className="border rounded-lg px-3 py-2" />
           </div>
-          <input name="file" type="file" accept=".pdf,.docx,.xlsx,.xls,.txt" className="mb-4" required />
+          <input name="file" type="file" accept=".md,.markdown,.txt,.pdf,.docx,.xlsx,.xls" className="mb-4" required />
           <br />
           <button type="submit" disabled={uploading} className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50">
             {uploading ? '上傳解析中...' : '上傳並解析'}

@@ -100,14 +100,14 @@ export default function ControlsPage() {
       <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
         <h3 className="font-semibold mb-3 flex items-center gap-2"><Upload size={16} /> 匯入資通系統防護基準</h3>
         <p className="text-sm text-gray-500 mb-4">
-          上傳 PDF/Word/Excel/TXT，系統會先解析文字，再由 AI 萃取成「控制領域 / 控制項 / 等級 / 要求」資料表。未來法規更新時可匯入新版本並保留舊版本。
+          建議上傳 Markdown/TXT，系統會保留你整理好的段落與表格，再由 AI 萃取成「控制領域 / 控制項 / 等級 / 要求」資料表。未來法規更新時可匯入新版本並保留舊版本。
         </p>
         <form onSubmit={handleUpload} className="grid grid-cols-1 gap-3 md:grid-cols-5 md:items-end">
           <input name="name" placeholder="版本名稱（如：防護基準 113版）" className="min-w-0 border rounded-lg px-3 py-2" required />
           <input name="source" placeholder="來源（如：數位發展部）" className="min-w-0 border rounded-lg px-3 py-2" />
           <input name="effective_date" placeholder="生效日期" className="min-w-0 border rounded-lg px-3 py-2" />
           <input name="expected_count" type="number" min="1" placeholder="預期項數（如：81）" className="min-w-0 border rounded-lg px-3 py-2" />
-          <input name="file" type="file" accept=".pdf,.docx,.xlsx,.xls,.txt" className="min-w-0 text-sm" required />
+          <input name="file" type="file" accept=".md,.markdown,.txt,.pdf,.docx,.xlsx,.xls" className="min-w-0 text-sm" required />
           <button disabled={uploading} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 md:col-span-5">
             {uploading ? '匯入中，請稍候...' : '開始匯入'}
           </button>

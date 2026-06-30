@@ -99,9 +99,9 @@ async def upload_knowledge(
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
 ):
-    """上傳文件作為知識庫（PDF/Word/Excel）"""
+    """上傳文件作為知識庫（PDF/Word/Excel/Markdown/TXT）"""
     suffix = Path(file.filename).suffix.lower()
-    if suffix not in {".pdf", ".docx", ".xlsx", ".xls", ".txt"}:
+    if suffix not in {".pdf", ".docx", ".xlsx", ".xls", ".md", ".markdown", ".txt"}:
         raise HTTPException(400, f"不支援的檔案格式: {suffix}")
 
     # Save temp file and parse
@@ -110,10 +110,7 @@ async def upload_knowledge(
         shutil.copyfileobj(file.file, f)
 
     try:
-        if suffix == ".txt":
-            content = temp_path.read_text(encoding="utf-8")
-        else:
-            content = parse_file(str(temp_path))
+        content = parse_file(str(temp_path))
     except Exception as e:
         raise HTTPException(500, f"檔案解析失敗: {e}")
     finally:

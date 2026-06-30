@@ -1,8 +1,10 @@
 # Spec Advisor — 採購規格書 AI 審查助手
 
-採購規格書審查輔助系統，讓採購人員上傳規格書（PDF/Word/Excel），由 AI 自動進行綁標檢測、法規合規、商務風險等 13 種審查，並產出結構化 Markdown 報告。
+採購規格書審查輔助系統，讓採購與資訊單位上傳規格書（PDF/Word/Excel），由 AI 自動進行綁標檢測、法規合規、資安控制措施、商務風險等 13 種審查，並產出結構化 Markdown 報告。
 
-目前版本：**v1.9.2**
+系統目前部署於 Raspberry Pi 5 內網環境，前端以 nginx 提供服務，後端 FastAPI 透過 `/api/*` 由前端反向代理。知識庫與控制措施匯入已改為 Markdown/TXT 優先，以避免 PDF 解析時造成章節、表格與條列順序破碎。
+
+目前版本：**v1.9.4**
 
 ---
 
@@ -10,16 +12,26 @@
 
 1. [系統架構](#系統架構)
 2. [分析功能清單](#分析功能清單)
-3. [知識庫清單](#知識庫清單)
+3. [知識庫與控制措施](#知識庫與控制措施)
 4. [專案目錄結構](#專案目錄結構)
 5. [開發指南](#開發指南)
 6. [部署流程](#部署流程)
-7. [版本歷程](#版本歷程)
-8. [未來規劃 Phase 3](#未來規劃-phase-3)
+7. [維運檢查](#維運檢查)
+8. [版本歷程](#版本歷程)
+9. [未來規劃 Phase 3](#未來規劃-phase-3)
 
 ---
 
 ## 系統架構
+
+### 核心用途
+
+| 使用情境 | 說明 |
+|------|------|
+| 採購規格書審查 | 上傳規格書後執行綁標、合理性、成本、資安、智財、SLA、互通性等分析 |
+| 法規與院內規章引用 | 知識庫以 embedding + keyword fallback 提供審查依據 |
+| 資通安全控制措施 | 依文件的防護需求等級套用「普 / 中 / 高」控制措施 |
+| 審閱與產出 | 支援分析歷史、人工審閱、規格書範本、投標須知產生與文件比較 |
 
 ### 技術棧
 
@@ -50,6 +62,16 @@
                         ├── uploads ./uploads/
                         └── LLM     :8317/v1/chat/completions
 ```
+
+### 主要資料流
+
+| 流程 | 路徑 |
+|------|------|
+| 規格書上傳 | Frontend → `/api/documents` → `parser.py` → SQLite `documents.content_text` |
+| AI 分析 | `/api/analysis/{doc_id}/{type}` → `AnalysisJob` → `analysis_jobs.py` → `llm.py` |
+| 知識庫匯入 | `/api/knowledge/upload` → `parser.py` → `KnowledgeBase` → `KnowledgeChunk` + embedding |
+| 控制措施匯入 | `/api/controls/import` → `parser.py` → LLM JSON 萃取 → `ControlMeasure` |
+| 部署 | Windows `pscp/plink` → Pi `~/spec-advisor` → `docker compose build && up -d` |
 
 ### Embedding 機制
 
@@ -110,7 +132,9 @@
 
 ---
 
-## 知識庫清單
+## 知識庫與控制措施
+
+### 知識庫
 
 知識庫存於 SQLite，上傳後自動建 embedding chunks。分析時依啟用狀態與類型自動檢索。
 
@@ -132,7 +156,33 @@
 - 付款條件（院內）
 - 資訊要求（院內）
 
-> 知識庫可在 UI「知識庫」頁面新增/編輯/停用，或透過 `POST /api/knowledge/upload` API 上傳文件（PDF/Word/Excel/TXT）。
+> 知識庫可在 UI「知識庫」頁面新增/編輯/停用，或透過 `POST /api/knowledge/upload` API 上傳文件。建議使用 Markdown/TXT 以保留人工整理後的章節、條列與表格結構；仍支援 PDF/Word/Excel 作為備援輸入。
+
+### 控制措施
+
+控制措施資料表用於資安合規分析，來源為資通系統防護基準。匯入後系統會依防護需求等級套用控制措施：
+
+| 文件防護需求等級 | 分析時納入控制措施 |
+|------|------|
+| 普 | 普 |
+| 中 | 普 + 中 |
+| 高 | 普 + 中 + 高 |
+
+控制措施匯入建議格式：Markdown 或 TXT。PDF 仍可上傳，但 PDF parser 容易造成表格欄位、跨頁段落與條列順序錯置，會影響 LLM 萃取 `domain / item / level / requirement / source_text` 的準確度。
+
+建議 Markdown 來源格式：
+
+```markdown
+## 存取控制
+
+### 帳號管理
+
+| 等級 | 要求 |
+|------|------|
+| 普 | 建立帳號申請、異動、停用及定期檢核程序。 |
+| 中 | 除普級要求外，應定期檢視高權限帳號並留存紀錄。 |
+| 高 | 除中級要求外，應導入集中式帳號管理或等效控制。 |
+```
 
 ---
 
@@ -166,11 +216,11 @@ spec-advisor/
 │           ├── llm.py          # 所有 LLM prompt 定義 + call_llm + embedding retrieval
 │           ├── analysis_jobs.py # 非同步 Job runner（asyncio.create_task）
 │           ├── embedding.py    # fastembed wrapper（chunk / embed / cosine search）
-│           └── parser.py       # 文件解析（PDF/Word/Excel → 純文字）
+│           └── parser.py       # 文件解析（PDF/Word/Excel/Markdown/TXT → 純文字）
 │
 └── frontend/
     ├── Dockerfile              # nginx，build 後 COPY dist
-    ├── package.json            # 版本號在此（v1.9.1）
+    ├── package.json            # 版本號在此（v1.9.4）
     ├── vite.config.js          # 從 package.json 讀版本號注入 __APP_VERSION__
     └── src/
         ├── App.jsx             # 路由 + 顯示版本號
@@ -282,7 +332,7 @@ export const analyzeXxx = (docId, knowledgeIds) =>
 
 **方式 A：UI 操作**（推薦）
 
-前往「知識庫」頁面 → 「新增知識庫」→ 選擇類別（政府法規/院內規章/產業標準/自訂）→ 上傳 PDF/Word/Excel/TXT 或貼上文字。上傳後系統自動建立 embedding chunks。
+前往「知識庫」頁面 → 「新增知識庫」→ 選擇類別（政府法規/院內規章/產業標準/自訂）→ 上傳 Markdown/TXT（推薦）、PDF/Word/Excel，或直接貼上文字。上傳後系統自動建立 embedding chunks。
 
 **方式 B：API**
 
@@ -291,7 +341,7 @@ curl -X POST http://192.168.88.115/api/knowledge/upload \
   -F "name=XXX法" \
   -F "category=law" \
   -F "source=法規來源說明" \
-  -F "file=@xxx.pdf"
+    -F "file=@xxx.md"
 ```
 
 **類別代碼**：`law`（政府法規）、`internal_rule`（院內規章）、`standard`（產業標準）、`custom`（自訂）
@@ -317,11 +367,14 @@ curl -X POST http://192.168.88.115/api/knowledge/re-embed
 
 ### 版本號更新
 
-版本號只需改一個地方，其他自動讀取：
+版本號來源以 `frontend/package.json` 為前端顯示基準，正式發布時請同步下列位置：
 
 1. 修改 `frontend/package.json` 的 `"version"` 欄位
-2. `vite.config.js` 會在 build 時讀取並注入為由 Vite define 注入的全域常數 `__APP_VERSION__`
-3. `App.jsx` 讀取 `__APP_VERSION__` 顯示在 UI 右上角
+2. 同步 `frontend/package-lock.json` 根節點與 packages `""` 的 `version`
+3. 同步 `backend/app/main.py` 的 FastAPI `version`
+4. 同步本 README 的「目前版本」與版本歷程
+5. `vite.config.js` 會在 build 時讀取 `frontend/package.json` 並注入全域常數 `__APP_VERSION__`
+6. `App.jsx` 讀取 `__APP_VERSION__` 顯示在 UI 左側導覽列標題下方
 
 ### 部署步驟
 
@@ -355,6 +408,44 @@ docker logs spec-advisor-frontend -f
 
 ---
 
+## 維運檢查
+
+### 部署後驗證
+
+```powershell
+# 前端首頁
+Invoke-WebRequest -Uri http://192.168.88.115 -UseBasicParsing | Select-Object StatusCode,StatusDescription
+
+# Backend API through nginx proxy
+Invoke-WebRequest -Uri http://192.168.88.115/api/knowledge/categories -UseBasicParsing | Select-Object StatusCode,Content
+
+# Pi container 狀態
+plink pi@192.168.88.115 "cd ~/spec-advisor && docker compose ps"
+```
+
+### 本機驗證
+
+```powershell
+# Backend touched files / modules syntax check
+d:/workspace/spec-advisor/.venv/Scripts/python.exe -m py_compile backend/app/main.py backend/app/services/parser.py backend/app/routers/knowledge.py backend/app/routers/controls.py
+
+# Frontend production build
+Set-Location frontend
+npm run build
+```
+
+### 重要注意事項
+
+| 項目 | 說明 |
+|------|------|
+| 程式碼部署 | 程式碼會 bake 進 Docker image，修改後一定要重新 build image |
+| DB / uploads | 透過 Pi 上 `./data`、`./uploads` volume 持久化，部署程式不應覆蓋這些資料夾 |
+| LLM | 依賴 Pi 上 `http://192.168.88.115:8317/v1` 的 CLIProxyAPI |
+| PDF parser | PyPDF2 適合一般文字，表格/掃描/跨頁文件建議先轉 Markdown/TXT |
+| SQLite | 目前適合內網 MVP；多人同時寫入、重建 embedding 或大量 job 時可能遇到 write lock，正式擴大使用建議評估 PostgreSQL |
+
+---
+
 ## 版本歷程
 
 | 版本 | 主要變更 |
@@ -365,6 +456,7 @@ docker logs spec-advisor-frontend -f
 | **v1.8.9** | 文件上傳補充資通安全分級欄位 |
 | **v1.9.0** | **Phase 1**：新增 PIA（個資保護影響評估）、SLA（服務水準分析）、Vendor Lock-in（供應商鎖定風險）<br>**Phase 2**：新增 Interoperability（醫療互通性）、ISMS（ISO 27001 合規）、BCP-DR（營運持續/災難復原）<br>Embedding retrieval 上線（fastembed + BAAI/bge-small-zh-v1.5） |
 | **v1.9.1** | UI 分析按鈕依功能分組（📋 基礎審查 / 🔒 法規合規 / 💰 商務風險 / 🏥 醫療專業 / 📝 產出） |
+| **v1.9.4** | 知識庫與控制措施匯入支援 Markdown/TXT 優先流程，避免 PDF 解析造成章節、表格、條列順序破碎。 |
 
 ---
 

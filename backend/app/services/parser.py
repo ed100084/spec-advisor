@@ -1,4 +1,4 @@
-"""文件解析服務 - 支援 PDF, DOCX, XLSX"""
+"""文件解析服務 - 支援 PDF, DOCX, XLSX, Markdown, TXT"""
 from pathlib import Path
 
 import PyPDF2
@@ -51,6 +51,10 @@ def parse_xlsx(file_path: str) -> str:
     return "\n".join(text_parts)
 
 
+def parse_text(file_path: str) -> str:
+    return Path(file_path).read_text(encoding="utf-8")
+
+
 def parse_file(file_path: str) -> str:
     suffix = Path(file_path).suffix.lower()
     parsers = {
@@ -58,6 +62,9 @@ def parse_file(file_path: str) -> str:
         ".docx": parse_docx,
         ".xlsx": parse_xlsx,
         ".xls": parse_xlsx,
+        ".md": parse_text,
+        ".markdown": parse_text,
+        ".txt": parse_text,
     }
     parser = parsers.get(suffix)
     if not parser:
