@@ -8,14 +8,15 @@ from sqlalchemy import select
 
 from app.config import settings
 
-SYSTEM_PROMPT = """你是一位專業的採購規格書審查顧問。你的任務是分析規格書內容，依據相關法規與規章找出潛在問題並提供改善建議。
+SYSTEM_PROMPT = """你是一位專業的採購規格書審查顧問。你的任務是分析規格書內容，依據使用者提供的法規與規章找出潛在問題並提供改善建議。
 請以繁體中文回覆，使用結構化的 Markdown 格式（標題、表格、清單）。
 重要規則：
 1. 每項發現的法規依據，必須且只能來自下方「審查依據」章節中提供的知識庫內容，格式為【依據：○○○ 第○條】。
-2. 若審查依據中未包含相關法規，請標註【依據：一般審查原則】，絕對不得自行引用未提供的法規條文。
-3. 不可從你的訓練資料中自行補充法規（例如政府採購法、醫療器材管理法等），除非該法規明確出現在審查依據中。"""
+2. 若審查依據中未包含可對應的法規、規章或控制措施，請標註【依據：未對應知識庫依據】，並將內容寫成「需人工複核」或「風險提示」，不得寫成確定的法規違反。
+3. 不可從你的訓練資料、一般常識或採購慣例自行補充法規（例如政府採購法、醫療器材管理法等），除非該法規明確出現在審查依據中。"""
 
-JSON_SYSTEM_PROMPT = """你是一位專業的採購規格書審查顧問。請只輸出有效 JSON，不要使用 Markdown code fence，不要輸出 JSON 以外的文字。"""
+JSON_SYSTEM_PROMPT = """你是一位專業的採購規格書審查顧問。請只輸出有效 JSON，不要使用 Markdown code fence，不要輸出 JSON 以外的文字。
+重要規則：審查依據必須且只能來自使用者提供的「審查依據」或「結構化控制措施」。若沒有可對應依據，basis 欄位請填「未對應知識庫依據」，並在 suggestion 標註需人工複核；不得引用未提供的法規、規章、標準或一般審查原則。"""
 
 STRUCTURED_OUTPUT_INSTRUCTIONS = """請只輸出以下 JSON 結構：
 {
@@ -26,7 +27,7 @@ STRUCTURED_OUTPUT_INSTRUCTIONS = """請只輸出以下 JSON 結構：
             "item": "檢查項目",
             "status": "符合/部分符合/缺漏/高風險/中風險/低風險/建議",
             "evidence": "引用規格書中的具體內容或說明未提及",
-            "basis": "引用法規、院內規章或知識庫依據；沒有依據時填一般審查原則",
+            "basis": "引用法規、院內規章、控制措施或知識庫依據；沒有可對應依據時只能填未對應知識庫依據，不得填一般審查原則",
             "suggestion": "具體改善建議"
         }
     ],
@@ -708,7 +709,7 @@ async def get_knowledge_context(
     from app.models import KnowledgeBase, KnowledgeChunk
 
     if knowledge_ids is not None and len(knowledge_ids) == 0:
-        return "（未選擇知識庫，請依一般慣例進行審查）"
+        return "（未選擇知識庫；不得引用任何法規、規章或一般審查原則。若提出風險提示，審查依據請填【依據：未對應知識庫依據】，並標註需人工複核。）"
 
     async with async_session() as db:
         # Query selected knowledge bases
@@ -721,7 +722,7 @@ async def get_knowledge_context(
         items = result.scalars().all()
 
     if not items:
-        return "（尚無知識庫資料，請依一般採購法規與慣例進行審查）"
+        return "（尚無知識庫資料；不得引用任何法規、規章或一般審查原則。若提出風險提示，審查依據請填【依據：未對應知識庫依據】，並標註需人工複核。）"
 
     kb_ids = [item.id for item in items]
 
@@ -730,7 +731,7 @@ async def get_knowledge_context(
         context = await _embedding_retrieval(kb_ids, analysis_type, query_text)
         if context:
             names = chr(12289).join(item.name for item in items)
-            context += f"\n\n---\n本次可引用的法規僅限上述知識庫：{names}。請勿引用上述以外的任何法規條文。若某項發現無法對應上述法規，請填寫「一般審查原則」作為依據。"
+            context += f"\n\n---\n本次可引用的依據僅限上述知識庫：{names}。請勿引用上述以外的任何法規、規章、標準或一般審查原則。若某項發現無法對應上述內容，請填寫【依據：未對應知識庫依據】，並標註需人工複核；不得寫成確定的法規違反。"
             return context
     except Exception as e:
         logging.getLogger(__name__).warning("Embedding retrieval failed, falling back to keywords: %s", e)
@@ -744,7 +745,7 @@ async def get_knowledge_context(
 
     context = "\n\n".join(parts)
     names = chr(12289).join(item.name for item in items)
-    context += f"\n\n---\n本次可引用的法規僅限上述 {len(items)} 項：{names}。請勿引用上述以外的任何法規條文。若某項發現無法對應上述法規，請填寫「一般審查原則」作為依據。"
+    context += f"\n\n---\n本次可引用的依據僅限上述 {len(items)} 項：{names}。請勿引用上述以外的任何法規、規章、標準或一般審查原則。若某項發現無法對應上述內容，請填寫【依據：未對應知識庫依據】，並標註需人工複核；不得寫成確定的法規違反。"
     return context
 
 

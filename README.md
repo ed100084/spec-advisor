@@ -4,7 +4,7 @@
 
 系統目前部署於 Raspberry Pi 5 內網環境，前端以 nginx 提供服務，後端 FastAPI 透過 `/api/*` 由前端反向代理。知識庫與控制措施匯入已改為 Markdown/TXT 優先，以避免 PDF 解析時造成章節、表格與條列順序破碎。
 
-目前版本：**v1.9.4**
+目前版本：**v1.9.5**
 
 ---
 
@@ -220,7 +220,7 @@ spec-advisor/
 │
 └── frontend/
     ├── Dockerfile              # nginx，build 後 COPY dist
-    ├── package.json            # 版本號在此（v1.9.4）
+    ├── package.json            # 版本號在此（v1.9.5）
     ├── vite.config.js          # 從 package.json 讀版本號注入 __APP_VERSION__
     └── src/
         ├── App.jsx             # 路由 + 顯示版本號
@@ -457,6 +457,7 @@ npm run build
 | **v1.9.0** | **Phase 1**：新增 PIA（個資保護影響評估）、SLA（服務水準分析）、Vendor Lock-in（供應商鎖定風險）<br>**Phase 2**：新增 Interoperability（醫療互通性）、ISMS（ISO 27001 合規）、BCP-DR（營運持續/災難復原）<br>Embedding retrieval 上線（fastembed + BAAI/bge-small-zh-v1.5） |
 | **v1.9.1** | UI 分析按鈕依功能分組（📋 基礎審查 / 🔒 法規合規 / 💰 商務風險 / 🏥 醫療專業 / 📝 產出） |
 | **v1.9.4** | 知識庫與控制措施匯入支援 Markdown/TXT 優先流程，避免 PDF 解析造成章節、表格、條列順序破碎。 |
+| **v1.9.5** | 收斂 LLM 審查依據規則：移除「一般審查原則」fallback，未命中知識庫時改標示「未對應知識庫依據」與需人工複核，降低幻覺引用風險。 |
 
 ---
 
