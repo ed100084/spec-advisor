@@ -16,7 +16,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Spec Advisor API",
     description="規格書檢視與建議系統",
-    version="1.9.5",
+    version="1.9.6",
     lifespan=lifespan,
 )
 
