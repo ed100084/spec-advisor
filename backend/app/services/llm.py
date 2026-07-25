@@ -646,9 +646,9 @@ def structured_to_markdown(data: dict) -> str:
             "| {item} | {status} | {evidence} | {basis} | {suggestion} |".format(
                 item=str(finding.get("item") or "").replace("|", "｜"),
                 status=str(finding.get("status") or "").replace("|", "｜"),
-                evidence=str(finding.get("evidence") or "").replace("|", "｜").replace("\n", "<br>"),
-                basis=str(finding.get("basis") or "").replace("|", "｜").replace("\n", "<br>"),
-                suggestion=str(finding.get("suggestion") or "").replace("|", "｜").replace("\n", "<br>"),
+                evidence=str(finding.get("evidence") or "").replace("|", "｜").replace("\n", "；"),
+                basis=str(finding.get("basis") or "").replace("|", "｜").replace("\n", "；"),
+                suggestion=str(finding.get("suggestion") or "").replace("|", "｜").replace("\n", "；"),
             )
         )
     if recommendations:

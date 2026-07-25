@@ -48,20 +48,20 @@ export default function TemplatesPage() {
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-6">規格書範本產生</h2>
+      <h2 className="mb-4 text-xl font-bold md:mb-6 md:text-2xl">規格書範本產生</h2>
 
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Left: Generator */}
-        <div className="col-span-2">
-          <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-            <div className="grid grid-cols-3 gap-4 mb-4">
+        <div className="lg:col-span-2">
+          <div className="mb-6 rounded-xl bg-white p-4 shadow-sm md:p-6">
+            <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">類別</label>
                 <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full border rounded-lg px-3 py-2">
                   {categories.map((c) => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
-              <div className="col-span-2">
+              <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">需求描述</label>
                 <input
                   value={description}
@@ -74,7 +74,7 @@ export default function TemplatesPage() {
             <button
               onClick={handleGenerate}
               disabled={loading}
-              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50"
+              className="flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-white hover:bg-emerald-700 disabled:opacity-50 sm:w-auto"
             >
               {loading ? <Loader2 size={16} className="animate-spin" /> : <Wand2 size={16} />}
               AI 產生範本
@@ -82,8 +82,8 @@ export default function TemplatesPage() {
           </div>
 
           {generated && (
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <div className="flex items-center gap-3 mb-4">
+            <div className="rounded-xl bg-white p-4 shadow-sm md:p-6">
+              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
                 <input
                   value={templateName}
                   onChange={(e) => setTemplateName(e.target.value)}
@@ -92,7 +92,8 @@ export default function TemplatesPage() {
                 />
                 <button
                   onClick={handleSave}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  disabled={!templateName.trim()}
+                  className="flex min-h-11 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <Save size={16} /> 儲存範本
                 </button>
@@ -104,21 +105,22 @@ export default function TemplatesPage() {
 
         {/* Right: Saved Templates */}
         <div>
-          <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="rounded-xl bg-white p-4 shadow-sm md:p-6">
             <h3 className="font-semibold mb-4">已儲存範本</h3>
             {templates.length === 0 ? (
               <p className="text-gray-400 text-sm">尚無儲存的範本</p>
             ) : (
               <div className="space-y-2">
                 {templates.map((t) => (
-                  <div
+                  <button
+                    type="button"
                     key={t.id}
                     onClick={() => handleLoad(t.id)}
-                    className="border rounded-lg p-3 cursor-pointer hover:bg-gray-50"
+                    className="w-full rounded-lg border p-3 text-left hover:bg-gray-50"
                   >
                     <p className="font-medium text-sm">{t.name}</p>
                     <p className="text-xs text-gray-400">{t.category} · {new Date(t.created_at).toLocaleDateString('zh-TW')}</p>
-                  </div>
+                  </button>
                 ))}
               </div>
             )}

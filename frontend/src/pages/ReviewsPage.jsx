@@ -68,7 +68,7 @@ export default function ReviewsPage() {
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-6">協作審閱</h2>
+      <h2 className="mb-4 text-xl font-bold md:mb-6 md:text-2xl">協作審閱</h2>
 
       <div className="mb-6">
         <label className="block text-sm font-medium text-gray-700 mb-2">選擇文件</label>
@@ -83,11 +83,11 @@ export default function ReviewsPage() {
       </div>
 
       {selectedDoc && (
-        <div className="grid grid-cols-2 gap-6" style={{ minHeight: '70vh' }}>
+        <div className="grid grid-cols-1 gap-6 lg:min-h-[70vh] lg:grid-cols-2">
           {/* Left: AI Analysis Results */}
           <div className="flex flex-col">
             <div className="bg-white rounded-xl shadow-sm flex flex-col flex-1 overflow-hidden">
-              <div className="px-4 py-3 border-b bg-gray-50 flex items-center justify-between">
+              <div className="flex flex-col gap-2 border-b bg-gray-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                 <h3 className="font-semibold text-sm">AI 分析結果</h3>
                 {analyses.length > 0 && (
                   <div className="relative">
@@ -97,7 +97,7 @@ export default function ReviewsPage() {
                         const a = analyses.find((x) => x.id === e.target.value)
                         setSelectedAnalysis(a)
                       }}
-                      className="text-sm border rounded-lg px-2 py-1 pr-7 appearance-none bg-white"
+                      className="w-full appearance-none rounded-lg border bg-white px-2 py-2 pr-7 text-sm sm:max-w-xs"
                     >
                       {analyses.map((a) => (
                         <option key={a.id} value={a.id}>
@@ -131,6 +131,7 @@ export default function ReviewsPage() {
                 onChange={(e) => setName(e.target.value)}
                 placeholder="審閱者姓名"
                 className="w-full border rounded-lg px-3 py-2 mb-2 text-sm"
+                required
               />
               <textarea
                 value={comment}
@@ -138,8 +139,9 @@ export default function ReviewsPage() {
                 placeholder="參考左側分析結果，寫下您的審閱意見..."
                 className="w-full border rounded-lg px-3 py-2 resize-none text-sm mb-2"
                 rows={4}
+                required
               />
-              <button type="submit" className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white rounded-lg py-2 hover:bg-blue-700 text-sm">
+              <button type="submit" disabled={!name.trim() || !comment.trim()} className="flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-blue-600 py-2 text-sm text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50">
                 <MessageSquare size={14} /> 送出意見
               </button>
             </form>
@@ -147,9 +149,9 @@ export default function ReviewsPage() {
             {/* Review List */}
             <div className="flex-1 overflow-auto space-y-2">
               {reviews.map((r) => (
-                <div key={r.id} className="bg-white rounded-xl shadow-sm p-3 flex items-start justify-between">
+                <div key={r.id} className="flex items-start justify-between rounded-xl bg-white p-3 shadow-sm">
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="mb-1 flex flex-wrap items-center gap-2">
                       <span className="font-medium text-sm">{r.reviewer_name}</span>
                       <span className={`text-xs px-2 py-0.5 rounded-full ${statusColors[r.status]}`}>
                         {statusLabels[r.status]}
@@ -160,10 +162,10 @@ export default function ReviewsPage() {
                   </div>
                   {r.status === 'pending' && (
                     <div className="flex gap-1 ml-3 shrink-0">
-                      <button onClick={() => handleStatus(r.id, 'approved')} className="text-green-600 hover:bg-green-50 p-1 rounded" title="通過">
+                      <button type="button" onClick={() => handleStatus(r.id, 'approved')} className="tap-target inline-flex items-center justify-center rounded-lg text-green-600 hover:bg-green-50" title="通過" aria-label={`通過 ${r.reviewer_name} 的意見`}>
                         <Check size={16} />
                       </button>
-                      <button onClick={() => handleStatus(r.id, 'rejected')} className="text-red-600 hover:bg-red-50 p-1 rounded" title="退回">
+                      <button type="button" onClick={() => handleStatus(r.id, 'rejected')} className="tap-target inline-flex items-center justify-center rounded-lg text-red-600 hover:bg-red-50" title="退回" aria-label={`退回 ${r.reviewer_name} 的意見`}>
                         <X size={16} />
                       </button>
                     </div>

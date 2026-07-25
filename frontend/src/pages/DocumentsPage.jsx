@@ -131,14 +131,14 @@ export default function DocumentsPage() {
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-6">文件管理</h2>
+      <h2 className="mb-4 text-xl font-bold md:mb-6 md:text-2xl">文件管理</h2>
 
       {/* Upload Area */}
       <div
         onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
         onDragLeave={() => setDragOver(false)}
         onDrop={handleDrop}
-        className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors mb-6 ${
+        className={`mb-6 rounded-xl border-2 border-dashed p-5 text-center transition-colors md:p-8 ${
           dragOver ? 'border-blue-400 bg-blue-50' : 'border-gray-300 hover:border-gray-400'
         }`}
       >
@@ -159,12 +159,12 @@ export default function DocumentsPage() {
 
       {/* Upload Form (department/project) */}
       {showUploadForm && (
-        <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+        <div className="mb-6 rounded-xl bg-white p-4 shadow-sm md:p-6">
           <h3 className="font-semibold mb-3">上傳 {pendingFiles.length} 個檔案</h3>
           <div className="text-sm text-gray-500 mb-4">
             {pendingFiles.map((f) => f.name).join('、')}
           </div>
-          <div className="grid grid-cols-2 gap-4 mb-4">
+          <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">部門</label>
               <input
@@ -286,14 +286,14 @@ export default function DocumentsPage() {
                 </div>
               ))}
               </div>
-              <div className="grid grid-cols-3 gap-3 items-end">
+              <div className="grid grid-cols-1 items-end gap-3 sm:grid-cols-3">
               <div className="bg-white border rounded-lg px-3 py-2">
                 <p className="text-xs text-gray-500">推導防護需求等級</p>
                 <p className={`text-lg font-bold ${derivedProtectionLevel === '高' ? 'text-red-600' : derivedProtectionLevel === '中' ? 'text-amber-600' : 'text-green-600'}`}>
                   {derivedProtectionLevel}
                 </p>
               </div>
-              <div className="col-span-2">
+              <div className="sm:col-span-2">
                 <label className="block text-xs font-medium text-gray-600 mb-1">系統重要性 / 判斷原因</label>
                 <input
                   value={systemImportance}
@@ -334,17 +334,17 @@ export default function DocumentsPage() {
             )}
           </div>
 
-          <div className="flex gap-2">
+          <div className="sticky bottom-0 -mx-4 -mb-4 flex flex-col-reverse gap-2 border-t bg-white/95 p-4 backdrop-blur sm:static sm:m-0 sm:flex-row sm:border-0 sm:bg-transparent sm:p-0">
             <button
               onClick={handleUploadConfirm}
               disabled={uploading}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              className="min-h-11 w-full rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50 sm:w-auto"
             >
               {uploading ? '上傳中...' : '確認上傳'}
             </button>
             <button
               onClick={() => { setShowUploadForm(false); setPendingFiles([]) }}
-              className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300"
+              className="min-h-11 w-full rounded-lg bg-gray-200 px-4 py-2 hover:bg-gray-300 sm:w-auto"
             >
               取消
             </button>
@@ -354,12 +354,12 @@ export default function DocumentsPage() {
 
       {/* Filters */}
       {(filters.departments.length > 0 || filters.projects.length > 0) && (
-        <div className="flex items-center gap-3 mb-4">
-          <Filter size={16} className="text-gray-400" />
+        <div className="mb-4 flex flex-col gap-2 rounded-xl bg-white p-3 shadow-sm sm:flex-row sm:items-center sm:bg-transparent sm:p-0 sm:shadow-none">
+          <Filter size={16} className="hidden text-gray-400 sm:block" />
           <select
             value={filterDept}
             onChange={(e) => setFilterDept(e.target.value)}
-            className="border rounded-lg px-3 py-1.5 text-sm"
+            className="w-full rounded-lg border px-3 py-2 text-sm sm:w-auto"
           >
             <option value="">全部部門</option>
             {filters.departments.map((d) => <option key={d} value={d}>{d}</option>)}
@@ -367,7 +367,7 @@ export default function DocumentsPage() {
           <select
             value={filterProj}
             onChange={(e) => setFilterProj(e.target.value)}
-            className="border rounded-lg px-3 py-1.5 text-sm"
+            className="w-full rounded-lg border px-3 py-2 text-sm sm:w-auto"
           >
             <option value="">全部專案</option>
             {filters.projects.map((p) => <option key={p} value={p}>{p}</option>)}
@@ -375,7 +375,7 @@ export default function DocumentsPage() {
           {(filterDept || filterProj) && (
             <button
               onClick={() => { setFilterDept(''); setFilterProj('') }}
-              className="text-xs text-blue-600 hover:underline"
+              className="min-h-10 self-start px-1 text-sm text-blue-600 hover:underline sm:min-h-0"
             >
               清除篩選
             </button>
@@ -393,9 +393,47 @@ export default function DocumentsPage() {
               🏢 {dept}
             </h3>
             {Object.entries(projects).map(([proj, projDocs]) => (
-              <div key={proj} className="ml-4 mb-4">
+              <div key={proj} className="mb-4 md:ml-4">
                 <h4 className="text-xs font-medium text-gray-400 mb-2">📁 {proj}</h4>
-                <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+                <div className="space-y-2 md:hidden">
+                  {projDocs.map((doc) => {
+                    const Icon = fileIcons[doc.file_type] || File
+                    return (
+                      <article key={doc.id} className="rounded-xl bg-white p-4 shadow-sm">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex min-w-0 items-start gap-3">
+                            <Icon size={20} className="mt-0.5 shrink-0 text-gray-400" />
+                            <div className="min-w-0">
+                              <h5 className="break-words text-sm font-semibold text-gray-900">{doc.filename}</h5>
+                              <p className="mt-1 text-xs uppercase text-gray-500">
+                                {doc.file_type} · {formatSize(doc.file_size)}
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(doc.id, doc.filename)}
+                            className="tap-target inline-flex shrink-0 items-center justify-center rounded-lg text-red-500 hover:bg-red-50"
+                            aria-label={`刪除 ${doc.filename}`}
+                          >
+                            <Trash2 size={17} />
+                          </button>
+                        </div>
+                        <div className="mt-3 flex flex-wrap gap-1.5 text-xs">
+                          <span className="rounded-full bg-slate-100 px-2 py-1 text-slate-700">
+                            {doc.is_information_system ? `責任 ${doc.security_responsibility_level || 'A'} / 防護 ${doc.protection_level || '中'}` : '非資通系統'}
+                          </span>
+                          {doc.is_critical_infrastructure && <span className="rounded-full bg-rose-50 px-2 py-1 text-rose-700">關鍵基礎設施</span>}
+                          {doc.processes_personal_data && <span className="rounded-full bg-amber-50 px-2 py-1 text-amber-700">含個資</span>}
+                        </div>
+                        <p className="mt-3 text-xs text-gray-400">
+                          {new Date(doc.uploaded_at).toLocaleString('zh-TW')}
+                        </p>
+                      </article>
+                    )
+                  })}
+                </div>
+                <div className="hidden overflow-hidden rounded-xl bg-white shadow-sm md:block">
                   <table className="w-full">
                     <thead className="bg-gray-50 text-left text-xs text-gray-500">
                       <tr>
@@ -428,8 +466,10 @@ export default function DocumentsPage() {
                             </td>
                             <td className="px-4 py-2">
                               <button
+                                type="button"
                                 onClick={() => handleDelete(doc.id, doc.filename)}
-                                className="text-red-400 hover:text-red-600"
+                                className="tap-target inline-flex items-center justify-center rounded-lg text-red-400 hover:bg-red-50 hover:text-red-600"
+                                aria-label={`刪除 ${doc.filename}`}
                               >
                                 <Trash2 size={14} />
                               </button>

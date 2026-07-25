@@ -79,18 +79,22 @@ export default function KnowledgePage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold">知識庫管理</h2>
-        <div className="flex gap-2">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between md:mb-6">
+        <h2 className="text-xl font-bold md:text-2xl">知識庫管理</h2>
+        <div className="grid grid-cols-2 gap-2 sm:flex">
           <button
+            type="button"
             onClick={() => { setShowUpload(false); setShowAdd(!showAdd) }}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="flex min-h-11 items-center justify-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm text-white hover:bg-blue-700 sm:px-4"
+            aria-expanded={showAdd}
           >
             <Plus size={16} /> 手動新增
           </button>
           <button
+            type="button"
             onClick={() => { setShowAdd(false); setShowUpload(!showUpload) }}
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
+            className="flex min-h-11 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-3 py-2 text-sm text-white hover:bg-emerald-700 sm:px-4"
+            aria-expanded={showUpload}
           >
             <Upload size={16} /> 上傳文件
           </button>
@@ -103,9 +107,9 @@ export default function KnowledgePage() {
 
       {/* Manual Add Form */}
       {showAdd && (
-        <form onSubmit={handleCreate} className="bg-white rounded-xl shadow-sm p-6 mb-6">
+        <form onSubmit={handleCreate} className="mb-6 rounded-xl bg-white p-4 shadow-sm md:p-6">
           <h3 className="font-semibold mb-4">手動新增知識</h3>
-          <div className="grid grid-cols-3 gap-4 mb-4">
+          <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-4">
             <input
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -135,7 +139,7 @@ export default function KnowledgePage() {
             rows={8}
             required
           />
-          <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+          <button type="submit" className="min-h-11 w-full rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 sm:w-auto">
             儲存
           </button>
         </form>
@@ -143,18 +147,17 @@ export default function KnowledgePage() {
 
       {/* Upload Form */}
       {showUpload && (
-        <form onSubmit={handleUpload} className="bg-white rounded-xl shadow-sm p-6 mb-6">
+        <form onSubmit={handleUpload} className="mb-6 rounded-xl bg-white p-4 shadow-sm md:p-6">
           <h3 className="font-semibold mb-4">上傳文件為知識庫</h3>
-          <div className="grid grid-cols-3 gap-4 mb-4">
+          <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-4">
             <input name="name" placeholder="名稱" className="border rounded-lg px-3 py-2" required />
             <select name="category" className="border rounded-lg px-3 py-2">
               {categories.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
             </select>
             <input name="source" placeholder="來源說明" className="border rounded-lg px-3 py-2" />
           </div>
-          <input name="file" type="file" accept=".md,.markdown,.txt,.pdf,.docx,.xlsx,.xls" className="mb-4" required />
-          <br />
-          <button type="submit" disabled={uploading} className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50">
+          <input name="file" type="file" accept=".md,.markdown,.txt,.pdf,.docx,.xlsx,.xls" className="mb-4 block w-full text-sm" required />
+          <button type="submit" disabled={uploading} className="min-h-11 w-full rounded-lg bg-emerald-600 px-4 py-2 text-white hover:bg-emerald-700 disabled:opacity-50 sm:w-auto">
             {uploading ? '上傳解析中...' : '上傳並解析'}
           </button>
         </form>
@@ -173,23 +176,23 @@ export default function KnowledgePage() {
           ) : (
             <div className="space-y-2">
               {group.items.map((item) => (
-                <div key={item.id} className="bg-white rounded-lg shadow-sm px-4 py-3 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
+                <div key={item.id} className="flex flex-col gap-3 rounded-lg bg-white px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex min-w-0 flex-wrap items-center gap-2 sm:gap-3">
                     <span className={`text-xs px-2 py-0.5 rounded-full ${categoryColor[item.category]}`}>
                       {item.category_label}
                     </span>
-                    <span className="font-medium">{item.name}</span>
-                    {item.source && <span className="text-xs text-gray-400">({item.source})</span>}
+                    <span className="min-w-0 break-words font-medium">{item.name}</span>
+                    {item.source && <span className="break-words text-xs text-gray-400">({item.source})</span>}
                     <span className="text-xs text-gray-400">{(item.content_length / 1000).toFixed(1)}K 字</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => handleView(item)} className="text-gray-400 hover:text-blue-600 p-1" title="檢視">
+                  <div className="flex items-center justify-end gap-1 border-t pt-2 sm:border-0 sm:pt-0">
+                    <button type="button" onClick={() => handleView(item)} className="tap-target inline-flex items-center justify-center rounded-lg text-gray-400 hover:bg-blue-50 hover:text-blue-600" title="檢視" aria-label={`檢視 ${item.name}`}>
                       <Eye size={16} />
                     </button>
-                    <button onClick={() => handleToggle(item)} className={`p-1 ${item.enabled ? 'text-green-600' : 'text-gray-400'}`} title={item.enabled ? '已啟用' : '已停用'}>
+                    <button type="button" onClick={() => handleToggle(item)} className={`tap-target inline-flex items-center justify-center rounded-lg hover:bg-gray-50 ${item.enabled ? 'text-green-600' : 'text-gray-400'}`} title={item.enabled ? '已啟用' : '已停用'} aria-label={`${item.enabled ? '停用' : '啟用'} ${item.name}`}>
                       {item.enabled ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}
                     </button>
-                    <button onClick={() => handleDelete(item)} className="text-gray-400 hover:text-red-600 p-1" title="刪除">
+                    <button type="button" onClick={() => handleDelete(item)} className="tap-target inline-flex items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-600" title="刪除" aria-label={`刪除 ${item.name}`}>
                       <Trash2 size={16} />
                     </button>
                   </div>
@@ -202,16 +205,22 @@ export default function KnowledgePage() {
 
       {/* View Modal */}
       {viewItem && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50" onClick={() => setViewItem(null)}>
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-3xl max-h-[80vh] overflow-auto p-6 m-4" onClick={(e) => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">{viewItem.name}</h3>
-              <button onClick={() => setViewItem(null)} className="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center" onClick={() => setViewItem(null)}>
+          <div
+            className="max-h-[90vh] w-full overflow-auto rounded-t-2xl bg-white p-4 shadow-xl sm:m-4 sm:max-w-3xl sm:rounded-xl sm:p-6"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="knowledge-dialog-title"
+          >
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <h3 id="knowledge-dialog-title" className="break-words text-lg font-semibold">{viewItem.name}</h3>
+              <button type="button" onClick={() => setViewItem(null)} className="tap-target inline-flex shrink-0 items-center justify-center rounded-lg text-xl text-gray-500 hover:bg-gray-100" aria-label="關閉知識內容">&times;</button>
             </div>
             <div className="text-sm text-gray-500 mb-4">
               {viewItem.category_label} · {viewItem.source}
             </div>
-            <div className="bg-gray-50 rounded-lg p-4 text-sm whitespace-pre-wrap max-h-[60vh] overflow-auto">
+            <div className="max-h-[65vh] overflow-auto whitespace-pre-wrap break-words rounded-lg bg-gray-50 p-3 text-sm sm:p-4">
               {viewItem.content}
             </div>
           </div>

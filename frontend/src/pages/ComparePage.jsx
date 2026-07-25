@@ -31,9 +31,9 @@ export default function ComparePage() {
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-6">版本差異比對</h2>
+      <h2 className="mb-4 text-xl font-bold md:mb-6 md:text-2xl">版本差異比對</h2>
 
-      <div className="grid grid-cols-2 gap-4 mb-6">
+      <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">規格書 A</label>
           <select value={docA} onChange={(e) => setDocA(e.target.value)} className="w-full border rounded-lg px-3 py-2">
@@ -52,19 +52,19 @@ export default function ComparePage() {
 
       <button
         onClick={handleCompare}
-        disabled={loading || !docA || !docB}
-        className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 mb-6"
+        disabled={loading || !docA || !docB || docA === docB}
+        className="mb-6 flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-white hover:bg-purple-700 disabled:opacity-50 sm:w-auto"
       >
         {loading ? <Loader2 size={16} className="animate-spin" /> : <GitCompare size={16} />}
         開始比對
       </button>
 
       {result && (
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <div className="flex gap-4 mb-4 text-sm text-gray-500">
-            <span>A: {result.doc_a.filename}</span>
-            <span>vs</span>
-            <span>B: {result.doc_b.filename}</span>
+        <div className="rounded-xl bg-white p-4 shadow-sm md:p-6">
+          <div className="mb-4 flex flex-col gap-1 break-words text-sm text-gray-500 sm:flex-row sm:gap-4">
+            <span>A：{result.doc_a.filename}</span>
+            <span className="hidden sm:inline">vs</span>
+            <span>B：{result.doc_b.filename}</span>
           </div>
           <MarkdownView>{result.result}</MarkdownView>
         </div>

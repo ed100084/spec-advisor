@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Search, Shield, CheckCircle, Loader2, BookOpen, DollarSign, ShieldCheck, FileEdit, KeyRound, UserCheck, Clock, Unlink, Network, HardDrive } from 'lucide-react'
 import {
   getDocuments, analyzeBinding, analyzeReasonability, analyzeFull,
@@ -69,6 +69,8 @@ export default function AnalysisPage() {
   const [showKbPanel, setShowKbPanel] = useState(false)
   const [jobStatus, setJobStatus] = useState(null)
   const [activeJobs, setActiveJobs] = useState([])
+  const [runningType, setRunningType] = useState(null)
+  const pollTimers = useRef(new Set())
 
   useEffect(() => {
     getDocuments().then(({ data }) => setDocs(data))
@@ -82,6 +84,19 @@ export default function AnalysisPage() {
     // Load active jobs on page entry
     loadActiveJobs()
   }, [])
+
+  useEffect(() => () => {
+    pollTimers.current.forEach((timer) => clearTimeout(timer))
+    pollTimers.current.clear()
+  }, [])
+
+  const schedulePoll = (callback, delay) => {
+    const timer = setTimeout(() => {
+      pollTimers.current.delete(timer)
+      callback()
+    }, delay)
+    pollTimers.current.add(timer)
+  }
 
   const loadActiveJobs = async () => {
     try {
@@ -110,20 +125,22 @@ export default function AnalysisPage() {
             content: status.result?.result || '',
           })
           setLoading(false)
+          setRunningType(null)
           if (selectedDoc) {
             getAnalysisHistory(selectedDoc).then(({ data }) => setHistory(data))
           }
         } else if (status.status === 'failed') {
           alert(`分析失敗: ${status.error || '未知錯誤'}`)
           setLoading(false)
+          setRunningType(null)
         } else {
-          setTimeout(poll, 3000)
+          schedulePoll(poll, 3000)
         }
       } catch (e) {
-        setTimeout(poll, 5000)
+        schedulePoll(poll, 5000)
       }
     }
-    setTimeout(poll, 2000)
+    schedulePoll(poll, 2000)
   }
 
   useEffect(() => {
@@ -140,6 +157,7 @@ export default function AnalysisPage() {
   const runAnalysis = async (type) => {
     if (!selectedDoc) return alert('請先選擇文件')
     setLoading(true)
+    setRunningType(type.key)
     setResult(null)
     setJobStatus(null)
     try {
@@ -150,6 +168,7 @@ export default function AnalysisPage() {
     } catch (err) {
       alert(`分析啟動失敗: ${err.response?.data?.detail || err.message}`)
       setLoading(false)
+      setRunningType(null)
     }
   }
 
@@ -172,7 +191,7 @@ export default function AnalysisPage() {
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-6">AI 分析</h2>
+      <h2 className="mb-4 text-xl font-bold md:mb-6 md:text-2xl">AI 分析</h2>
 
       {/* Document Selector */}
       <div className="mb-4">
@@ -195,16 +214,17 @@ export default function AnalysisPage() {
       <div className="mb-6">
         <button
           onClick={() => setShowKbPanel(!showKbPanel)}
-          className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-800"
+          className="flex min-h-11 w-full items-center gap-2 text-left text-sm text-gray-600 hover:text-gray-800 sm:w-auto"
+          aria-expanded={showKbPanel}
         >
           <BookOpen size={16} />
           審查依據：已選 {selectedCount}/{knowledgeItems.length} 項知識庫
-          <span className="text-xs text-gray-400">（點擊展開）</span>
+          <span className="ml-auto shrink-0 text-xs text-gray-400 sm:ml-0">（{showKbPanel ? '收合' : '展開'}）</span>
         </button>
 
         {showKbPanel && (
           <div className="mt-2 bg-white rounded-xl shadow-sm p-4 border">
-            <div className="flex items-center justify-between mb-3">
+            <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <span className="text-sm font-medium text-gray-700">選擇分析時要引用的知識庫</span>
               <div className="flex gap-2 text-xs">
                 <button onClick={selectAllKb} className="text-blue-600 hover:underline">全選</button>
@@ -253,19 +273,19 @@ export default function AnalysisPage() {
           </h3>
           <div className="space-y-2">
             {activeJobs.map((job) => (
-              <div key={job.job_id} className="flex items-center gap-3">
-                <span className="text-sm font-medium text-gray-700 min-w-[100px]">
+              <div key={job.job_id} className="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-2 sm:flex">
+                <span className="min-w-0 text-sm font-medium text-gray-700 sm:min-w-[100px]">
                   {job.type_label}
                 </span>
-                <div className="flex-1 bg-gray-200 rounded-full h-2 overflow-hidden">
+                <span className="text-right text-xs text-gray-500 sm:order-3 sm:min-w-[80px]">
+                  {job.status === 'pending' ? '排隊中' : job.message || '執行中'} {job.progress}%
+                </span>
+                <div className="col-span-2 h-2 overflow-hidden rounded-full bg-gray-200 sm:flex-1">
                   <div
                     className="bg-blue-600 h-2 rounded-full transition-all duration-500"
                     style={{ width: `${job.progress}%` }}
                   />
                 </div>
-                <span className="text-xs text-gray-500 min-w-[80px]">
-                  {job.status === 'pending' ? '排隊中' : job.message || '執行中'} {job.progress}%
-                </span>
               </div>
             ))}
           </div>
@@ -277,7 +297,7 @@ export default function AnalysisPage() {
         {analysisGroups.map((group) => (
           <div key={group.label}>
             <p className="text-sm font-semibold text-gray-500 mb-2 mt-4">{group.label}</p>
-            <div className="flex flex-wrap gap-3">
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-3">
               {group.keys.map((key) => {
                 const type = analysisTypeMap[key]
                 if (!type) return null
@@ -287,7 +307,7 @@ export default function AnalysisPage() {
                     key={type.key}
                     onClick={() => runAnalysis(type)}
                     disabled={loading || !selectedDoc}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-white transition-colors disabled:opacity-50 ${
+                    className={`min-h-11 min-w-0 justify-center rounded-lg px-3 py-2 text-sm text-white transition-colors disabled:opacity-50 sm:flex sm:items-center sm:gap-2 sm:px-4 ${
                       type.color === 'red' ? 'bg-red-600 hover:bg-red-700' :
                       type.color === 'yellow' ? 'bg-amber-600 hover:bg-amber-700' :
                       type.color === 'green' ? 'bg-emerald-600 hover:bg-emerald-700' :
@@ -303,8 +323,10 @@ export default function AnalysisPage() {
                       'bg-blue-600 hover:bg-blue-700'
                     }`}
                   >
-                    {loading ? <Loader2 size={16} className="animate-spin" /> : <Icon size={16} />}
-                    {type.label}
+                    <span className="flex items-center justify-center gap-2">
+                      {loading && runningType === type.key ? <Loader2 size={16} className="shrink-0 animate-spin" /> : <Icon size={16} className="shrink-0" />}
+                      <span>{type.label}</span>
+                    </span>
                   </button>
                 )
               })}
@@ -315,7 +337,7 @@ export default function AnalysisPage() {
 
       {/* Progress */}
       {loading && jobStatus && (
-        <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+        <div className="mb-6 rounded-xl bg-white p-4 shadow-sm md:p-6">
           <div className="flex items-center gap-3 mb-3">
             <Loader2 size={18} className="animate-spin text-blue-600" />
             <span className="text-sm font-medium">{jobStatus.message || '分析中...'}</span>
@@ -335,7 +357,7 @@ export default function AnalysisPage() {
 
       {/* Result */}
       {result && (
-        <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+        <div className="mb-6 rounded-xl bg-white p-4 shadow-sm md:p-6">
           <h3 className="text-lg font-semibold mb-4">{result.type} 結果</h3>
           <MarkdownView>{result.content}</MarkdownView>
         </div>
@@ -343,7 +365,7 @@ export default function AnalysisPage() {
 
       {/* History */}
       {history.length > 0 && (
-        <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className="rounded-xl bg-white p-4 shadow-sm md:p-6">
           <h3 className="text-lg font-semibold mb-4">分析歷史</h3>
           <div className="space-y-3">
             {history.map((h) => (
@@ -352,7 +374,7 @@ export default function AnalysisPage() {
                 className="border rounded-lg p-3 cursor-pointer hover:bg-gray-50"
                 onClick={() => setResult({ type: typeLabels[h.type] || h.type, content: h.result?.analysis || '' })}
               >
-                <div className="flex justify-between text-sm">
+                <div className="flex flex-col gap-1 text-sm sm:flex-row sm:justify-between">
                   <span className="font-medium">{typeLabels[h.type] || h.type}</span>
                   <span className="text-gray-400">{new Date(h.created_at).toLocaleString('zh-TW')}</span>
                 </div>

@@ -95,9 +95,9 @@ export default function ControlsPage() {
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-6">控制措施資料表</h2>
+      <h2 className="mb-4 text-xl font-bold md:mb-6 md:text-2xl">控制措施資料表</h2>
 
-      <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+      <div className="mb-6 rounded-xl bg-white p-4 shadow-sm md:p-6">
         <h3 className="font-semibold mb-3 flex items-center gap-2"><Upload size={16} /> 匯入資通系統防護基準</h3>
         <p className="text-sm text-gray-500 mb-4">
           建議上傳 Markdown/TXT，系統會保留你整理好的段落與表格，再由 AI 萃取成「控制領域 / 控制項 / 等級 / 要求」資料表。未來法規更新時可匯入新版本並保留舊版本。
@@ -108,7 +108,7 @@ export default function ControlsPage() {
           <input name="effective_date" placeholder="生效日期" className="min-w-0 border rounded-lg px-3 py-2" />
           <input name="expected_count" type="number" min="1" placeholder="預期項數（如：81）" className="min-w-0 border rounded-lg px-3 py-2" />
           <input name="file" type="file" accept=".md,.markdown,.txt,.pdf,.docx,.xlsx,.xls" className="min-w-0 text-sm" required />
-          <button disabled={uploading} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 md:col-span-5">
+          <button disabled={uploading} className="min-h-11 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50 md:col-span-5">
             {uploading ? '匯入中，請稍候...' : '開始匯入'}
           </button>
         </form>
@@ -123,7 +123,7 @@ export default function ControlsPage() {
         <select value={selectedLevel} onChange={(e) => setSelectedLevel(e.target.value)} className="border rounded-lg px-3 py-2 text-sm">
           {levels.map((l) => <option key={l || 'all'} value={l}>{l ? `防護需求 ${l}（含以下）` : '全部等級'}</option>)}
         </select>
-        <button onClick={loadMeasures} className="p-2 text-gray-500 hover:text-blue-600" title="重新整理">
+        <button type="button" onClick={loadMeasures} className="tap-target inline-flex items-center justify-center self-start rounded-lg text-gray-500 hover:bg-blue-50 hover:text-blue-600 md:self-auto" title="重新整理" aria-label="重新整理控制措施">
           <RefreshCcw size={16} />
         </button>
       </div>
@@ -133,9 +133,9 @@ export default function ControlsPage() {
           <h3 className="font-semibold text-sm mb-2">版本管理</h3>
           <div className="space-y-2">
             {versions.map((v) => (
-              <div key={v.id} className="flex items-center justify-between border rounded-lg px-3 py-2 text-sm">
-                <span>{v.name} · {v.source || '未填來源'} · {v.measure_count} 項</span>
-                <button onClick={() => handleDeleteVersion(v)} className="text-red-500 hover:text-red-700"><Trash2 size={14} /></button>
+              <div key={v.id} className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2 text-sm">
+                <span className="min-w-0 break-words">{v.name} · {v.source || '未填來源'} · {v.measure_count} 項</span>
+                <button type="button" onClick={() => handleDeleteVersion(v)} className="tap-target -my-2 inline-flex shrink-0 items-center justify-center rounded-lg text-red-500 hover:bg-red-50 hover:text-red-700" aria-label={`刪除版本 ${v.name}`}><Trash2 size={15} /></button>
               </div>
             ))}
           </div>
@@ -143,14 +143,14 @@ export default function ControlsPage() {
       )}
 
       <form onSubmit={handleCreateMeasure} className="bg-white rounded-xl shadow-sm p-4 mb-4 grid grid-cols-1 gap-3 md:grid-cols-12 md:items-start">
-        <div className="col-span-12 flex items-center gap-2 font-semibold text-sm"><Plus size={16} /> 新增控制措施</div>
+        <div className="flex items-center gap-2 text-sm font-semibold md:col-span-12"><Plus size={16} /> 新增控制措施</div>
         <input value={newMeasure.domain} onChange={(e) => setNewMeasure({ ...newMeasure, domain: e.target.value })} placeholder="領域" className="min-w-0 border rounded-lg px-3 py-2 text-sm md:col-span-2" />
         <input value={newMeasure.item} onChange={(e) => setNewMeasure({ ...newMeasure, item: e.target.value })} placeholder="控制項" className="min-w-0 border rounded-lg px-3 py-2 text-sm md:col-span-2" />
         <select value={newMeasure.level} onChange={(e) => setNewMeasure({ ...newMeasure, level: e.target.value })} className="border rounded-lg px-3 py-2 text-sm md:col-span-1">
           {['普', '中', '高'].map((level) => <option key={level} value={level}>{level}</option>)}
         </select>
         <textarea value={newMeasure.requirement} onChange={(e) => setNewMeasure({ ...newMeasure, requirement: e.target.value })} placeholder="要求" className="min-w-0 border rounded-lg px-3 py-2 text-sm min-h-[88px] md:col-span-5 md:min-h-[42px]" required />
-        <button className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 md:col-span-2">新增</button>
+        <button className="min-h-11 rounded-lg bg-emerald-600 px-4 py-2 text-white hover:bg-emerald-700 md:col-span-2">新增</button>
       </form>
 
       <div className="space-y-3 md:hidden">

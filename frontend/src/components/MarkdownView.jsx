@@ -1,6 +1,5 @@
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import rehypeRaw from 'rehype-raw'
 
 function preprocess(text) {
   if (!text) return ''
@@ -17,11 +16,11 @@ function preprocess(text) {
 
 export default function MarkdownView({ children }) {
   return (
-    <div className="prose prose-sm md:prose-base max-w-none
+    <div className="min-w-0 break-words prose prose-sm md:prose-base max-w-none
       prose-headings:text-gray-800 prose-headings:border-b prose-headings:border-gray-200 prose-headings:pb-2 prose-headings:mb-3
       prose-h1:text-xl prose-h2:text-lg prose-h3:text-base prose-h3:border-0
       prose-p:text-gray-700 prose-p:leading-relaxed prose-p:my-2
-      prose-table:border-collapse prose-table:w-full prose-table:text-sm
+      prose-table:my-0 prose-table:border-collapse prose-table:w-full prose-table:min-w-[640px] prose-table:text-sm
       prose-thead:bg-slate-100
       prose-th:px-3 prose-th:py-2 prose-th:text-left prose-th:border prose-th:border-gray-300 prose-th:font-semibold
       prose-td:px-3 prose-td:py-2 prose-td:border prose-td:border-gray-200 prose-td:align-top
@@ -32,7 +31,16 @@ export default function MarkdownView({ children }) {
       prose-code:bg-gray-100 prose-code:px-1 prose-code:rounded prose-code:text-sm
       prose-blockquote:border-l-4 prose-blockquote:border-blue-300 prose-blockquote:bg-blue-50 prose-blockquote:py-1 prose-blockquote:px-4
     ">
-      <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{
+          table: ({ node: _node, ...props }) => (
+            <div className="my-4 max-w-full overflow-x-auto rounded-lg border border-gray-200">
+              <table {...props} />
+            </div>
+          ),
+        }}
+      >
         {preprocess(children)}
       </ReactMarkdown>
     </div>

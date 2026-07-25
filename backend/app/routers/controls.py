@@ -2,6 +2,7 @@
 import json
 import re
 import shutil
+import uuid
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
@@ -52,7 +53,7 @@ async def import_control_baseline(
     if suffix not in {".pdf", ".docx", ".xlsx", ".xls", ".md", ".markdown", ".txt"}:
         raise HTTPException(400, f"不支援的檔案格式: {suffix}")
 
-    temp_path = Path(settings.upload_dir) / f"controls_import{suffix}"
+    temp_path = Path(settings.upload_dir) / f"controls_import_{uuid.uuid4().hex}{suffix}"
     with open(temp_path, "wb") as f:
         shutil.copyfileobj(file.file, f)
 
